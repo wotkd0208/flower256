@@ -11,16 +11,16 @@
 body{margin:0;}
 /* Layout: 작업대처럼 왼쪽은 큰 캔버스, 오른쪽은 조절 패널. 좁은 화면에서는 위아래로 쌓임 */
 :root {
-  --bg: #ECEFE9;
-  --surface: #F7F8F4;
-  --canvas: #E2E6DE;
-  --plate: #C9D0C5;
-  --slot: #EBEEE7;
-  --major: #7F8B7E;
-  --ink: #1B211D;
-  --muted: #5C685F;
-  --line: #CDD4CA;
-  --accent: #5A3FAF;
+  --bg: #FFFFFF;
+  --surface: #FFFFFF;
+  --canvas: #ECECEC;
+  --plate: #CFCFCF;
+  --slot: #F5F5F5;
+  --major: #8C8C8C;
+  --ink: #111111;
+  --muted: #5E5E5E;
+  --line: #D6D6D6;
+  --accent: #111111;
   --accent-ink: #FFFFFF;
   --f-display: "Noto Sans CJK KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --f-body: "Noto Sans CJK KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
@@ -28,102 +28,101 @@ body{margin:0;}
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111512; --surface: #181D19; --canvas: #1D231F; --plate: #0B0E0C; --slot: #262D28; --major: #5A675E; --ink: #E4EAE2; --muted: #93A096;
-    --line: #2B332D; --accent: #B19BFF; --accent-ink: #160F2E; color-scheme: dark;
+    color-scheme: light;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #111512; --surface: #181D19; --canvas: #1D231F; --plate: #0B0E0C; --slot: #262D28; --major: #5A675E; --ink: #E4EAE2; --muted: #93A096;
-  --line: #2B332D; --accent: #B19BFF; --accent-ink: #160F2E; color-scheme: dark;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6; }
-.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 28px; }
-header { display: grid; gap: 6px; }
-.eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--muted); font-weight: 500; }
-h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 0; text-wrap: balance; }
-.lede { margin: 0; color: var(--muted); max-width: 62ch; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.65; word-break: keep-all; overflow-wrap: break-word; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 64px; display: grid; gap: 32px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font-size: 12.5px; letter-spacing: .02em; color: var(--muted); font-weight: 500; }
+h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(30px, 4vw, 42px); line-height: 1.2; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 60ch; line-height: 1.75; }
 
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 312px; gap: 24px; align-items: start; }
 @media (max-width: 820px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 
-.stage { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.stage { display: grid; gap: 10px; min-width: 0; align-content: start; }
 #canvasHost { width: 100%; background: var(--canvas); border-radius: 6px; display: grid; place-items: center; overflow: hidden; position: relative; min-height: 240px; }
 #canvasHost canvas { display: block; max-width: 100%; height: auto; }
 #canvasHost.drag { outline: 2px dashed var(--accent); outline-offset: -8px; }
-.stagebar { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stagebar { display: flex; flex-wrap: wrap; gap: 6px 20px; line-height: 1.5; font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .stagebar b { color: var(--ink); font-weight: 500; }
 
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); }
-.group { display: grid; gap: 8px; }
-.group + .group { border-top: 1px solid var(--line); padding-top: 14px; }
-.gtitle { font-size: 12px; letter-spacing: .08em; color: var(--muted); font-weight: 600; margin: 0; }
-.row { display: grid; gap: 4px; }
-.row label { display: flex; justify-content: space-between; font-size: 13.5px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 18px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); }
+.group { display: grid; gap: 10px; }
+.group + .group { border-top: 1px solid var(--line); padding-top: 18px; }
+.gtitle { font-size: 12.5px; letter-spacing: .02em; color: var(--muted); font-weight: 600; margin: 0; }
+.row { display: grid; gap: 6px; }
+.row label { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; line-height: 1.4; }
 .row output { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 input[type=range] { width: 100%; accent-color: var(--accent); }
-.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.6; }
 
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip, .seg button, .tools button, .btn {
-  font: inherit; font-size: 13.5px; color: var(--ink); background: transparent; border: 1px solid var(--line);
-  border-radius: 999px; padding: 5px 12px; cursor: pointer;
+  font: inherit; font-size: 14px; line-height: 1.2; color: var(--ink); background: transparent; border: 1px solid #BDBDBD;
+  border-radius: 4px; padding: 8px 14px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
 }
 .chip[aria-pressed="true"], .seg button[aria-pressed="true"], .tools button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.seg, .tools { display: flex; flex-wrap: wrap; gap: 6px; }
-.tools button { padding: 4px 10px; font-size: 13px; }
+.seg, .tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.tools button { padding: 8px 12px; }
 .panel .wiring + .hint, .panel .hint { margin: 0; }
-.paintrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-input[type=color] { width: 40px; height: 30px; border: 1px solid var(--line); border-radius: 6px; background: transparent; padding: 2px; cursor: pointer; }
-.swatches { display: flex; flex-wrap: wrap; gap: 5px; }
-.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
-.controls .group { gap: 6px; align-content: start; }
+.paintrow { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+input[type=color] { width: 44px; height: 36px; border: 1px solid #BDBDBD; border-radius: 4px; background: transparent; padding: 2px; cursor: pointer; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 20px; }
+.controls .group { gap: 10px; align-content: start; }
 .controls .group + .group { border-top: 0; padding-top: 0; }
-.controls .row { gap: 0; }
-.sdesc { margin: -2px 0 4px; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
-.cgroup:last-child { display: flex; flex-direction: column; gap: 8px; }
+.controls .row { gap: 2px; }
+.sdesc { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.cgroup:last-child { display: flex; flex-direction: column; gap: 10px; }
 @media (max-width: 820px) { .controls { grid-template-columns: minmax(0, 1fr); } }
 .wiring { display: flex; flex-wrap: wrap; gap: 14px 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
 .wlabel { font-size: 12.5px; color: var(--muted); }
-.panel .wiring { padding: 0; border: 0; background: none; flex-direction: column; gap: 10px; }
-.ledline { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.panel .wiring { padding: 0; border: 0; background: none; flex-direction: column; gap: 12px; }
+.ledline { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .ldot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
-.ldot.on { background: #2E9E5B; } .ldot.wait { background: #E0A100; }
-.swatch { width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--line); cursor: pointer; padding: 0; }
+.ldot.on { background: #111111; } .ldot.wait { background: #A8A8A8; }
+.swatch { width: 26px; height: 26px; border-radius: 3px; border: 1px solid #CFCFCF; cursor: pointer; padding: 0; }
 .swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.swlabel { font-size: 11.5px; color: var(--muted); width: 100%; margin-top: 2px; }
+.swlabel { font-size: 12.5px; color: var(--muted); width: 100%; margin-top: 4px; line-height: 1.5; }
 #canvasHost canvas.editing { cursor: crosshair; }
 .upload { display: inline-flex; align-items: center; gap: 6px; }
 .upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 500; }
 :is(.chip, .seg button, .tools button, .btn, .upload):focus-visible, .upload:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
-.check { display: flex; gap: 8px; align-items: center; font-size: 13.5px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
 .check input { accent-color: var(--accent); }
 
 .code { display: grid; gap: 10px; min-width: 0; }
-.transfer { display: grid; gap: 18px; min-width: 0; }
-.thead { display: grid; gap: 6px; max-width: 72ch; }
-.thead h2 { font-family: var(--f-display); font-weight: 700; font-size: 26px; margin: 0; }
-.thead p { margin: 0; color: var(--muted); }
-.glink { font-size: 13.5px; color: var(--accent); text-decoration: none; width: fit-content; }
+.transfer { display: grid; gap: 20px; min-width: 0; padding-top: 8px; }
+.thead { display: grid; gap: 10px; max-width: 72ch; }
+.thead h2 { font-family: var(--f-display); font-weight: 700; font-size: 26px; line-height: 1.3; margin: 0; letter-spacing: -0.01em; }
+.thead p { margin: 0; color: var(--muted); line-height: 1.75; }
+.glink { font-size: 14px; font-weight: 500; text-underline-offset: 3px; color: var(--accent); text-decoration: none; width: fit-content; }
 .glink:hover { text-decoration: underline; }
-.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; }
-.snum { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
-.sbody { display: grid; gap: 8px; min-width: 0; }
-.sbody h3 { margin: 4px 0 0; font-size: 17px; font-weight: 700; }
-.sbody .when { margin: -4px 0 0; font-size: 12.5px; color: var(--muted); }
-.sbody ol { margin: 0; padding-left: 1.3em; display: grid; gap: 3px; }
-.sbody > p { margin: 0; color: var(--muted); max-width: 72ch; }
-.sbody .diffs { margin: 0; padding: 10px 14px 10px 30px; display: grid; gap: 3px; background: var(--canvas); border-radius: 6px; font-size: 14px; }
-.sbody .tip { margin: 0; font-size: 13.5px; color: var(--muted); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.step { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 22px 24px; }
+.snum { width: 32px; height: 32px; border-radius: 2px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+.sbody { display: grid; gap: 12px; min-width: 0; }
+.sbody h3 { margin: 3px 0 0; font-size: 17px; line-height: 1.5; font-weight: 700; }
+.sbody .when { margin: -8px 0 0; font-size: 13px; color: var(--muted); }
+.sbody ol { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; line-height: 1.7; }
+.sbody :not(pre) > code { font-size: .9em; padding: 1px 5px; background: #F2F2F2; border-radius: 3px; }
+.sbody > p { margin: 0; color: var(--muted); max-width: 72ch; line-height: 1.7; }
+.sbody .diffs { margin: 0; padding: 14px 18px 14px 34px; display: grid; gap: 6px; line-height: 1.65; background: #F2F2F2; border-radius: 6px; font-size: 14px; }
+.sbody .tip { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.65; }
 .sbody b { font-weight: 600; }
 .codebox { display: grid; gap: 0; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.codebar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; background: var(--canvas); font-size: 12.5px; color: var(--muted); }
+.codebar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px 8px 16px; background: #F2F2F2; font-size: 12.5px; color: var(--muted); }
 .codebox pre { border: 0; border-radius: 0; max-height: 360px; }
-.trouble { display: grid; gap: 8px; }
+.trouble { display: grid; gap: 14px; padding-top: 6px; }
 .trouble h3 { margin: 0; font-size: 17px; }
-.trouble dl { margin: 0; display: grid; grid-template-columns: minmax(0, 15em) minmax(0, 1fr); gap: 6px 18px; font-size: 14px; }
+.trouble dl { margin: 0; display: grid; grid-template-columns: minmax(0, 15em) minmax(0, 1fr); gap: 10px 24px; font-size: 14px; line-height: 1.65; }
 .trouble dt { font-weight: 600; }
 .trouble dd { margin: 0; color: var(--muted); }
 @media (max-width: 640px) { .trouble dl { grid-template-columns: minmax(0, 1fr); } .trouble dd { margin-bottom: 6px; } .step { grid-template-columns: minmax(0, 1fr); } }
@@ -136,10 +135,10 @@ input[type=color] { width: 40px; height: 30px; border: 1px solid var(--line); bo
 .guide a { color: var(--accent); }
 .guide .tip { font-size: 13.5px; }
 .guide .tip b, .guide ol b { color: var(--ink); font-weight: 600; }
-.guide .tip.warn, .guide .tip.warn b { color: #B3261E; }
-:root[data-theme="dark"] .guide .tip.warn, :root[data-theme="dark"] .guide .tip.warn b { color: #F2B8B5; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .guide .tip.warn, :root:not([data-theme="light"]) .guide .tip.warn b { color: #F2B8B5; } }
-pre { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; overflow-x: auto; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.65; max-height: 440px; }
+.guide .tip.warn, .guide .tip.warn b { color: #111111; }
+
+
+pre { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; overflow-x: auto; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.65; max-height: 440px; }
 #status { min-height: 1.4em; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -169,7 +168,7 @@ pre { margin: 0; background: var(--surface); border: 1px solid var(--line); bord
         <div class="row"><label for="zoom">확대 <output id="o-zoom"></output></label><input type="range" id="zoom" min="1" max="3" step="0.05"><p class="sdesc">숫자가 클수록 사진 가운데를 크게 담습니다</p></div>
         <div class="row"><label for="panX">좌우 위치 <output id="o-panX"></output></label><input type="range" id="panX" min="-50" max="50" step="1"><p class="sdesc">담을 영역을 왼쪽(−)·오른쪽(+)으로 옮깁니다</p></div>
         <div class="row"><label for="panY">위아래 위치 <output id="o-panY"></output></label><input type="range" id="panY" min="-50" max="50" step="1"><p class="sdesc">담을 영역을 위(−)·아래(+)로 옮깁니다</p></div>
-        <div class="chips"><button class="btn primary" id="bloom">다시 피우기</button></div>
+        <div class="chips"><button class="btn" id="bloom">다시 피우기</button></div>
       </div>
 
       <div class="group cgroup">
@@ -199,7 +198,7 @@ pre { margin: 0; background: var(--surface); border: 1px solid var(--line); bord
         </div>
         <label class="check"><input type="checkbox" id="ledGamma" checked> 감마 보정 (화면 색에 가깝게)</label>
         <p class="hint"><b>배선 고정</b> · 오른쪽 위 시작, 줄마다 방향이 바뀌는 지그재그</p>
-        <p class="hint" id="ledHint">ESP32를 UART 포트로 연결하고 누르세요. (크롬·엣지에서 연 cube_flower_live.html 전용)</p>
+        <p class="hint" id="ledHint">ESP32를 UART 포트로 연결하고 누르세요. (노트북 크롬·엣지에서 연 wotkd0208.github.io/flower256 전용)</p>
       </div>
 
       <div class="group">
@@ -208,7 +207,7 @@ pre { margin: 0; background: var(--surface); border: 1px solid var(--line); bord
           <button class="chip" data-sample="dandelion" aria-pressed="true">민들레</button>
           <button class="chip" data-sample="violet" aria-pressed="false">제비꽃</button>
           <button class="chip" data-sample="creeper" aria-pressed="false">능소화</button>
-          <label class="btn upload primary" for="file">사진 올리기<input type="file" id="file" accept="image/*"></label>
+          <label class="btn upload" for="file">사진 올리기<input type="file" id="file" accept="image/*"></label>
         </div>
       </div>
 
@@ -227,8 +226,8 @@ pre { margin: 0; background: var(--surface); border: 1px solid var(--line); bord
         </div>
         <p class="hint" id="toolHint">칸 위에 올리면 좌표와 색이 보입니다.</p>
         <div class="chips">
-          <button class="chip" id="undo">되돌리기</button>
-          <button class="chip" id="resetEdits">편집 초기화</button>
+          <button class="btn" id="undo">되돌리기</button>
+          <button class="btn" id="resetEdits">편집 초기화</button>
         </div>
       </div>
 
@@ -239,174 +238,25 @@ pre { margin: 0; background: var(--surface); border: 1px solid var(--line); bord
     <div class="thead">
       <p class="eyebrow">꽃을 만든 다음</p>
       <h2 id="tTitle">만든 꽃을 LED 박스(ESP32)로 옮기기</h2>
-      <a class="glink" href="https://claude.ai/artifact/RyqxHfMEUFNCsSxRTsiCT4" target="_blank" rel="noopener">이 안내만 따로 보기 →</a>
+      <a class="glink" href="guide.html" target="_blank" rel="noopener">이 안내만 따로 보기 →</a>
       <p>위에서 만든 16×16 꽃을 실제 LED 박스에 켜는 순서입니다. 박스 안의 ESP32가 화면에서 보낸 색을 받아 256개 LED에 그대로 켭니다.</p>
     </div>
     <ol class="steps">
       <li class="step">
         <div class="snum">1</div>
         <div class="sbody">
-          <h3>LED 박스에 수신 코드 올리기</h3>
-          <p class="when">세션 전에 박스마다 한 번 · 이미 올라가 있으면 건너뜁니다</p>
+          <h3>박스와 노트북 연결하기</h3>
           <ol>
-            <li>Arduino IDE의 보드 매니저에서 <b>esp32 (Espressif)</b>를, 라이브러리 매니저에서 <b>FastLED</b>를 설치합니다.</li>
-            <li>아래 <b>코드 복사</b>를 누르고 새 스케치에 붙여넣습니다.</li>
-            <li>박스를 콘센트에 꽂고, 노트북과 ESP32의 <b>UART</b> 포트를 USB로 연결합니다. 보드는 <b>ESP32S3 Dev Module</b>, 포트는 그 UART 포트를 고르고 업로드합니다.</li>
-            <li>업로드가 끝나면 LED가 0번부터 한 번 훑고 지나갑니다. 배선이 살아 있다는 뜻입니다.</li>
+            <li>LED 박스의 전원 플러그를 콘센트에 꽂습니다. 박스 안의 SMPS가 LED와 ESP32에 함께 전원을 넣어 줍니다. 저장된 꽃이 있으면 바로 켜집니다.</li>
+            <li>USB-C 데이터 케이블로 노트북과 ESP32의 <b>UART</b> 포트를 연결합니다. 이 케이블은 전원이 아니라 꽃 색상 및 위치 데이터를 보내는 통로입니다.</li>
+            <li>노트북의 <b>크롬이나 엣지</b>에서 <code>wotkd0208.github.io/flower256</code> 주소를 엽니다. (휴대폰이나 Claude 링크로 연 페이지에서는 USB 연결이 되지 않습니다)</li>
+            <li>오른쪽 위 <b>LED 연결</b>을 누르고, 이름에 <code>usbserial</code>이나 <code>SLAB</code>이 들어간 포트를 고릅니다.</li>
+            <li>검은 점과 함께 <b>LED 수신 중</b>이 뜨면 연결된 것입니다.</li>
           </ol>
-          <div class="codebox">
-            <div class="codebar"><span>esp32_led_receiver.ino</span><button class="btn" id="copyIno">코드 복사</button></div>
-            <pre><code id="inoOut">// 큐브 꽃 LED 수신기 · ESP32(-S3) + WS2812B 16×16 (256개)
-// 웹 변환기(cube_flower_live.html) 또는 Processing 스케치가 USB 시리얼로 보내는 꽃을 받아 LED에 표시합니다.
-//
-// ▶ 마지막 꽃을 기억합니다
-//   편집이 멈추고 2초가 지나면 그때의 꽃을 ESP32 안에 저장합니다.
-//   USB를 빼고 다시 전원을 켜도 마지막 꽃이 바로 켜지고, 노트북을 다시 연결하면 그대로 실시간 편집이 됩니다.
-//   그래서 별도의 Arduino 코드를 업로드할 필요가 없습니다.
-//
-// 필요한 라이브러리: FastLED (Arduino IDE 라이브러리 매니저에서 설치)
-// 프레임 형식: &#x27;L&#x27; &#x27;E&#x27; &#x27;D&#x27; + 밝기 1바이트 + RGB 768바이트(스트립 순서)  → 표시 + 저장
-//            &#x27;L&#x27; &#x27;E&#x27; &#x27;T&#x27; + 밝기 1바이트 + RGB 768바이트              → 표시만 (테스트 패턴, 저장 안 함)
-// 한 프레임을 받을 때마다 &#x27;K&#x27;를 돌려보내서 화면에 &quot;LED 수신 중&quot;이 표시됩니다.
-
-#include &lt;FastLED.h&gt;
-#include &lt;Preferences.h&gt;
-
-#define DATA_PIN       13       // LED 데이터 핀 (레벨 시프터를 거쳐 DIN으로)
-#define NUM_LEDS       256
-#define COLOR_ORDER    GRB      // 빨강이 초록으로 보이면 RGB 등으로 바꿔 보세요
-#define BAUD           921600   // 웹 변환기 · Processing과 같은 값
-#define MAX_MILLIAMPS  4000     // 5V 전원 정격보다 낮게 (밝기는 항상 최대라 이 값이 실제 밝기를 제한합니다)
-#define SAVE_DELAY_MS  2000     // 마지막 변경 후 이 시간 동안 바뀌지 않으면 저장
-
-const size_t FRAME_BYTES = NUM_LEDS * 3;
-
-CRGB leds[NUM_LEDS];
-uint8_t frameBuf[FRAME_BYTES];   // 받는 중인 프레임
-uint8_t shownBuf[FRAME_BYTES];   // 지금 켜져 있는 꽃
-uint8_t savedBuf[FRAME_BYTES];   // 저장되어 있는 꽃
-uint8_t shownBright = 255, savedBright = 255;
-bool haveSaved = false;
-
-Preferences prefs;
-
-// 수신 상태
-uint8_t state = 0;          // 0~2: 머리글 찾는 중, 3: 밝기, 4: 색 데이터
-uint16_t idx = 0;
-uint8_t frameBright = 255;
-bool frameNoSave = false;   // &#x27;T&#x27; 프레임(테스트 패턴)은 저장하지 않음
-unsigned long lastByte = 0;
-
-// 저장 관리
-bool pendingSave = false;
-unsigned long lastChangeAt = 0;
-
-void showBuffer(const uint8_t *buf, uint8_t bright) {
-  for (int i = 0; i &lt; NUM_LEDS; i++) leds[i] = CRGB(buf[i * 3], buf[i * 3 + 1], buf[i * 3 + 2]);
-  FastLED.setBrightness(bright);
-  FastLED.show();
-}
-
-void setup() {
-  Serial.setRxBufferSize(2048);   // 한 프레임(772바이트)이 넉넉히 들어가도록
-  Serial.begin(BAUD);
-  FastLED.addLeds&lt;WS2812B, DATA_PIN, COLOR_ORDER&gt;(leds, NUM_LEDS);
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_MILLIAMPS);
-
-  prefs.begin(&quot;flower&quot;, false);
-  size_t n = prefs.getBytes(&quot;rgb&quot;, savedBuf, FRAME_BYTES);
-  savedBright = prefs.getUChar(&quot;bright&quot;, 255);
-  if (n == FRAME_BYTES) {
-    haveSaved = true;
-    memcpy(shownBuf, savedBuf, FRAME_BYTES);
-    shownBright = savedBright;
-    showBuffer(shownBuf, shownBright);   // 저장된 마지막 꽃을 바로 켬
-  } else {
-    bootSweep();                          // 저장된 꽃이 없으면 배선 확인용 훑기
-  }
-}
-
-// 저장된 꽃이 없을 때만: 0번 LED부터 순서대로 한 번 훑습니다 (흰 점 = 0번(오른쪽 위), 파란 꼬리 = 배선 순서)
-void bootSweep() {
-  FastLED.setBrightness(40);
-  for (int i = 0; i &lt; NUM_LEDS; i++) {
-    leds[i] = (i == 0) ? CRGB::White : CRGB(0, 30, 70);
-    FastLED.show();
-    delay(5);
-  }
-  delay(400);
-  FastLED.clear(true);
-}
-
-void onFrame() {
-  bool changed = (frameBright != shownBright) || memcmp(frameBuf, shownBuf, FRAME_BYTES) != 0;
-  if (changed) {
-    memcpy(shownBuf, frameBuf, FRAME_BYTES);
-    shownBright = frameBright;
-    showBuffer(shownBuf, shownBright);
-    lastChangeAt = millis();
-  }
-  if (frameNoSave) {
-    pendingSave = false;   // 테스트 패턴은 저장하지 않음
-  } else {
-    // 저장된 꽃과 다르면 저장 대기 (실제 저장은 변경이 2초 멈춘 뒤 saveIfSettled에서)
-    bool sameAsSaved = haveSaved &amp;&amp; shownBright == savedBright &amp;&amp; memcmp(shownBuf, savedBuf, FRAME_BYTES) == 0;
-    pendingSave = !sameAsSaved;
-  }
-  Serial.write(&#x27;K&#x27;);
-}
-
-void saveIfSettled() {
-  if (!pendingSave || millis() - lastChangeAt &lt; SAVE_DELAY_MS) return;
-  memcpy(savedBuf, shownBuf, FRAME_BYTES);
-  savedBright = shownBright;
-  prefs.putBytes(&quot;rgb&quot;, savedBuf, FRAME_BYTES);
-  prefs.putUChar(&quot;bright&quot;, savedBright);
-  haveSaved = true;
-  pendingSave = false;
-}
-
-void loop() {
-  while (Serial.available() &gt; 0) {
-    uint8_t c = Serial.read();
-    lastByte = millis();
-    switch (state) {
-      case 0: state = (c == &#x27;L&#x27;) ? 1 : 0; break;
-      case 1: state = (c == &#x27;E&#x27;) ? 2 : (c == &#x27;L&#x27; ? 1 : 0); break;
-      case 2:
-        if (c == &#x27;D&#x27; || c == &#x27;T&#x27;) { frameNoSave = (c == &#x27;T&#x27;); state = 3; }
-        else state = (c == &#x27;L&#x27;) ? 1 : 0;
-        break;
-      case 3: frameBright = c; idx = 0; state = 4; break;
-      case 4:
-        frameBuf[idx++] = c;
-        if (idx &gt;= FRAME_BYTES) { onFrame(); state = 0; }
-        break;
-    }
-  }
-  // 프레임 중간에 데이터가 끊기면 버리고 다음 머리글을 기다립니다
-  if (state != 0 &amp;&amp; millis() - lastByte &gt; 200) state = 0;
-  saveIfSettled();
-}
-</code></pre>
-          </div>
         </div>
       </li>
       <li class="step">
         <div class="snum">2</div>
-        <div class="sbody">
-          <h3>박스와 노트북 연결하기</h3>
-          <ol>
-            <li>LED 박스의 전원 플러그를 콘센트에 꽂습니다. 박스 안의 SMPS가 LED와 ESP32에 함께 전원을 넣어 줍니다. 저장된 꽃이 있으면 바로 켜집니다.</li>
-            <li>USB-C 데이터 케이블로 노트북과 ESP32의 <b>UART</b> 포트를 연결합니다. 이 케이블은 전원이 아니라 꽃을 보내는 통로입니다.</li>
-            <li>노트북의 <b>크롬이나 엣지</b>에서 <code>cube_flower_live.html</code>을 엽니다. (QR이나 링크로 연 페이지에서는 USB 연결이 되지 않습니다)</li>
-            <li>오른쪽 위 <b>LED 연결</b>을 누르고, 이름에 <code>usbserial</code>이나 <code>SLAB</code>이 들어간 포트를 고릅니다.</li>
-            <li>초록 점과 함께 <b>LED 수신 중</b>이 뜨면 연결된 것입니다.</li>
-          </ol>
-        </div>
-      </li>
-      <li class="step">
-        <div class="snum">3</div>
         <div class="sbody">
           <h3>테스트 패턴으로 확인하기</h3>
           <ol>
@@ -417,7 +267,7 @@ void loop() {
         </div>
       </li>
       <li class="step">
-        <div class="snum">4</div>
+        <div class="snum">3</div>
         <div class="sbody">
           <h3>꽃 보내기</h3>
           <ol>
@@ -427,7 +277,7 @@ void loop() {
         </div>
       </li>
       <li class="step">
-        <div class="snum">5</div>
+        <div class="snum">4</div>
         <div class="sbody">
           <h3>화면과 LED의 색 맞추기</h3>
           <p>화면은 빛을 섞어 부드럽게 보여 주지만, LED는 빨강·초록·파랑 세 개의 작은 빛을 그대로 켭니다. 그래서 같은 색 값이라도 LED에서는 다르게 보이는 칸이 생깁니다.</p>
@@ -448,7 +298,7 @@ void loop() {
         </div>
       </li>
       <li class="step">
-        <div class="snum">6</div>
+        <div class="snum">5</div>
         <div class="sbody">
           <h3>박스에 꽃 남기기</h3>
           <ol>
@@ -463,10 +313,10 @@ void loop() {
     <div class="trouble">
       <h3>막혔을 때</h3>
       <dl>
-        <dt>"응답 기다리는 중"이 계속 떠요</dt><dd>USB를 뺐다 다시 꽂고 LED 연결을 다시 누르세요. 그래도 안 되면 1단계의 수신 코드가 올라가 있는지 확인합니다.</dd>
+        <dt>"응답 기다리는 중"이 계속 떠요</dt><dd>USB를 뺐다 다시 꽂고 LED 연결을 다시 누르세요. 그래도 안 되면 세션 진행자에게 알려 주세요.</dd>
         <dt>포트 목록에 아무것도 없어요</dt><dd>충전 전용이 아닌 데이터 케이블인지, ESP32의 UART 포트에 꽂았는지 확인하세요.</dd>
         <dt>포트를 열 수 없다고 나와요</dt><dd>Arduino IDE의 시리얼 모니터나 Processing이 같은 포트를 쓰고 있으면 닫고 다시 시도하세요.</dd>
-        <dt>LED가 아예 켜지지 않아요</dt><dd>박스의 전원 플러그가 콘센트에 꽂혀 있는지 확인하세요. 꽂혀 있는데도 꺼져 있으면 조교에게 알려 주세요.</dd>
+        <dt>LED가 아예 켜지지 않아요</dt><dd>박스의 전원 플러그가 콘센트에 꽂혀 있는지 확인하세요. 꽂혀 있는데도 꺼져 있으면 세션 진행자에게 알려 주세요.</dd>
       </dl>
     </div>
   </section>
@@ -478,8 +328,8 @@ void loop() {
 (function () {
   if (typeof p5 === 'undefined') {
     const msg = 'p5 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하거나, 이 파일과 같은 폴더에 p5.min.js가 있는지 확인한 뒤 크롬에서 다시 열어 주세요.';
-    document.addEventListener('DOMContentLoaded', () => { const el = document.getElementById('status'); if (el) { el.textContent = msg; el.style.color = '#B3261E'; } });
-    const el = document.getElementById('status'); if (el) { el.textContent = msg; el.style.color = '#B3261E'; }
+    document.addEventListener('DOMContentLoaded', () => { const el = document.getElementById('status'); if (el) { el.textContent = msg; el.style.color = '#111111'; } });
+    const el = document.getElementById('status'); if (el) { el.textContent = msg; el.style.color = '#111111'; }
     return;
   }
   const $ = (id) => document.getElementById(id);
@@ -580,7 +430,7 @@ void loop() {
     if (!src) return;
     const host = $('canvasHost');
     const ctrl = $('controls');
-    const reserve = (ctrl && window.innerWidth > 820 ? ctrl.offsetHeight : 0) + 96;
+    const reserve = (ctrl && window.innerWidth > 820 ? ctrl.offsetHeight : 0) + 64;
     const maxH = Math.max(300, window.innerHeight - reserve);
     const size = Math.round(Math.min(host.clientWidth, maxH));
     P.resizeCanvas(size, size, true);
@@ -665,7 +515,7 @@ void loop() {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fontPick = null; if (P && !animating) P.redraw(); });
   function render() {
     const p = P;
-    p.background(token('--canvas') || '#E2E6DE');
+    p.background(token('--canvas') || '#ECECEC');
     if (!src || !cells.length) return;
     const gap = Math.min(S.gap, cell - 2);
     const s = cell - gap;
@@ -1100,7 +950,7 @@ void loop() {
     const dot = $('ledDot'), st = $('ledState');
     if (!LED.writer) { dot.className = 'ldot'; st.textContent = '연결 안 됨'; return; }
     if (performance.now() - LED.lastAck < 2500) { dot.className = 'ldot on'; st.textContent = `LED 수신 중 · ${LED.acks}프레임`; }
-    else { dot.className = 'ldot wait'; st.textContent = '응답 기다리는 중 (ESP32 재시작 또는 수신 코드 확인)'; }
+    else { dot.className = 'ldot wait'; st.textContent = '응답 기다리는 중 (USB를 뺐다 다시 꽂아 보세요)'; }
   }
   async function readLoop() {
     try {
@@ -1112,7 +962,7 @@ void loop() {
     } catch (e) { }
   }
   async function ledConnect() {
-    if (!('serial' in navigator)) { ledMsg('이 브라우저는 USB 연결을 지원하지 않습니다. 컴퓨터의 크롬이나 엣지에서 cube_flower_live.html 파일을 열어 주세요.'); return; }
+    if (!('serial' in navigator)) { ledMsg('이 브라우저는 USB 연결을 지원하지 않습니다. 컴퓨터의 크롬이나 엣지에서 wotkd0208.github.io/flower256 를 열어 주세요.'); return; }
     try {
       const port = await navigator.serial.requestPort();
       await port.open({ baudRate: 921600, bufferSize: 4096 });
@@ -1125,7 +975,7 @@ void loop() {
       ledMsg('연결했습니다. 잠시 뒤 꽃이 뜨고, 이후로는 편집하는 대로 바로 바뀝니다.');
     } catch (e) {
       if (e.name === 'NotFoundError') ledMsg('포트를 고르지 않았습니다. 다시 눌러 usbserial 또는 SLAB이 들어간 포트를 고르세요.');
-      else if (e.name === 'SecurityError') ledMsg('이 페이지(Claude 아티팩트)에서는 브라우저가 USB 연결을 막습니다. 받은 cube_flower_live.html 파일을 크롬으로 열어 주세요.');
+      else if (e.name === 'SecurityError') ledMsg('이 페이지(Claude 아티팩트)에서는 브라우저가 USB 연결을 막습니다. 크롬에서 wotkd0208.github.io/flower256 를 열어 주세요.');
       else ledMsg('포트를 열 수 없습니다. Arduino IDE 시리얼 모니터나 Processing이 같은 포트를 쓰고 있으면 닫고 다시 시도하세요.');
     }
     updateLedState();
@@ -1196,7 +1046,7 @@ void loop() {
       try { navigator.clipboard.writeText(getText()).then(done, fallback); } catch (err) { fallback(); }
     });
   }
-  copier('copyIno', 'inoOut', () => $('inoOut').textContent, '코드 복사');
+  if ($('copyIno')) copier('copyIno', 'inoOut', () => $('inoOut').textContent, '코드 복사');
 
   $('ledConnect').addEventListener('click', () => { if (LED.writer) ledDisconnect('연결을 끊었습니다.'); else ledConnect(); });
   $('ledTest').addEventListener('click', e => {
