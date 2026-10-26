@@ -1,0 +1,1241 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>큐브 꽃 변환기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+body{margin:0;}
+/* Layout: 작업대처럼 왼쪽은 큰 캔버스, 오른쪽은 조절 패널. 좁은 화면에서는 위아래로 쌓임 */
+:root {
+  --bg: #ECEFE9;
+  --surface: #F7F8F4;
+  --canvas: #E2E6DE;
+  --plate: #C9D0C5;
+  --slot: #EBEEE7;
+  --major: #7F8B7E;
+  --ink: #1B211D;
+  --muted: #5C685F;
+  --line: #CDD4CA;
+  --accent: #5A3FAF;
+  --accent-ink: #FFFFFF;
+  --f-display: "Noto Sans CJK KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-body: "Noto Sans CJK KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono: "Noto Sans CJK KR", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111512; --surface: #181D19; --canvas: #1D231F; --plate: #0B0E0C; --slot: #262D28; --major: #5A675E; --ink: #E4EAE2; --muted: #93A096;
+    --line: #2B332D; --accent: #B19BFF; --accent-ink: #160F2E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111512; --surface: #181D19; --canvas: #1D231F; --plate: #0B0E0C; --slot: #262D28; --major: #5A675E; --ink: #E4EAE2; --muted: #93A096;
+  --line: #2B332D; --accent: #B19BFF; --accent-ink: #160F2E; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 28px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--muted); font-weight: 500; }
+h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 62ch; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 820px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.stage { display: grid; gap: 8px; min-width: 0; align-content: start; }
+#canvasHost { width: 100%; background: var(--canvas); border-radius: 6px; display: grid; place-items: center; overflow: hidden; position: relative; min-height: 240px; }
+#canvasHost canvas { display: block; max-width: 100%; height: auto; }
+#canvasHost.drag { outline: 2px dashed var(--accent); outline-offset: -8px; }
+.stagebar { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stagebar b { color: var(--ink); font-weight: 500; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); }
+.group { display: grid; gap: 8px; }
+.group + .group { border-top: 1px solid var(--line); padding-top: 14px; }
+.gtitle { font-size: 12px; letter-spacing: .08em; color: var(--muted); font-weight: 600; margin: 0; }
+.row { display: grid; gap: 4px; }
+.row label { display: flex; justify-content: space-between; font-size: 13.5px; }
+.row output { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip, .seg button, .tools button, .btn {
+  font: inherit; font-size: 13.5px; color: var(--ink); background: transparent; border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.chip[aria-pressed="true"], .seg button[aria-pressed="true"], .tools button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.seg, .tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.tools button { padding: 4px 10px; font-size: 13px; }
+.panel .wiring + .hint, .panel .hint { margin: 0; }
+.paintrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+input[type=color] { width: 40px; height: 30px; border: 1px solid var(--line); border-radius: 6px; background: transparent; padding: 2px; cursor: pointer; }
+.swatches { display: flex; flex-wrap: wrap; gap: 5px; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+.controls .group { gap: 6px; align-content: start; }
+.controls .group + .group { border-top: 0; padding-top: 0; }
+.controls .row { gap: 0; }
+.sdesc { margin: -2px 0 4px; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.cgroup:last-child { display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 820px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.wiring { display: flex; flex-wrap: wrap; gap: 14px 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+.wlabel { font-size: 12.5px; color: var(--muted); }
+.panel .wiring { padding: 0; border: 0; background: none; flex-direction: column; gap: 10px; }
+.ledline { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.ldot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+.ldot.on { background: #2E9E5B; } .ldot.wait { background: #E0A100; }
+.swatch { width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--line); cursor: pointer; padding: 0; }
+.swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.swlabel { font-size: 11.5px; color: var(--muted); width: 100%; margin-top: 2px; }
+#canvasHost canvas.editing { cursor: crosshair; }
+.upload { display: inline-flex; align-items: center; gap: 6px; }
+.upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 500; }
+:is(.chip, .seg button, .tools button, .btn, .upload):focus-visible, .upload:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13.5px; }
+.check input { accent-color: var(--accent); }
+
+.code { display: grid; gap: 10px; min-width: 0; }
+.transfer { display: grid; gap: 18px; min-width: 0; }
+.thead { display: grid; gap: 6px; max-width: 72ch; }
+.thead h2 { font-family: var(--f-display); font-weight: 700; font-size: 26px; margin: 0; }
+.thead p { margin: 0; color: var(--muted); }
+.glink { font-size: 13.5px; color: var(--accent); text-decoration: none; width: fit-content; }
+.glink:hover { text-decoration: underline; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; }
+.snum { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+.sbody { display: grid; gap: 8px; min-width: 0; }
+.sbody h3 { margin: 4px 0 0; font-size: 17px; font-weight: 700; }
+.sbody .when { margin: -4px 0 0; font-size: 12.5px; color: var(--muted); }
+.sbody ol { margin: 0; padding-left: 1.3em; display: grid; gap: 3px; }
+.sbody > p { margin: 0; color: var(--muted); max-width: 72ch; }
+.sbody .diffs { margin: 0; padding: 10px 14px 10px 30px; display: grid; gap: 3px; background: var(--canvas); border-radius: 6px; font-size: 14px; }
+.sbody .tip { margin: 0; font-size: 13.5px; color: var(--muted); }
+.sbody b { font-weight: 600; }
+.codebox { display: grid; gap: 0; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.codebar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; background: var(--canvas); font-size: 12.5px; color: var(--muted); }
+.codebox pre { border: 0; border-radius: 0; max-height: 360px; }
+.trouble { display: grid; gap: 8px; }
+.trouble h3 { margin: 0; font-size: 17px; }
+.trouble dl { margin: 0; display: grid; grid-template-columns: minmax(0, 15em) minmax(0, 1fr); gap: 6px 18px; font-size: 14px; }
+.trouble dt { font-weight: 600; }
+.trouble dd { margin: 0; color: var(--muted); }
+@media (max-width: 640px) { .trouble dl { grid-template-columns: minmax(0, 1fr); } .trouble dd { margin-bottom: 6px; } .step { grid-template-columns: minmax(0, 1fr); } }
+.code h2 { font-family: var(--f-display); font-weight: 700; font-size: 22px; margin: 0; }
+.codehead { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: end; }
+.codehead p { margin: 0; color: var(--muted); max-width: 64ch; }
+.guide { display: grid; gap: 8px; max-width: 70ch; min-width: 0; }
+.guide .eyebrow { margin: 0; }
+.guide ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; color: var(--ink); }
+.guide a { color: var(--accent); }
+.guide .tip { font-size: 13.5px; }
+.guide .tip b, .guide ol b { color: var(--ink); font-weight: 600; }
+.guide .tip.warn, .guide .tip.warn b { color: #B3261E; }
+:root[data-theme="dark"] .guide .tip.warn, :root[data-theme="dark"] .guide .tip.warn b { color: #F2B8B5; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .guide .tip.warn, :root:not([data-theme="light"]) .guide .tip.warn b { color: #F2B8B5; } }
+pre { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; overflow-x: auto; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.65; max-height: 440px; }
+#status { min-height: 1.4em; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">p5.js 워크샵 · 웹에서 채집한 꽃으로 정원 만들기</div>
+    <h1>큐브 꽃 변환기</h1>
+    <p class="lede">꽃 사진을 16×16, 256칸으로 줄이고, 채도와 밝기로 배경을 지운 뒤, 남은 칸을 도트로 다시 찍습니다. 칸이 적을수록 무엇을 남기고 무엇을 버릴지가 더 중요해집니다. 마지막에는 도트를 하나씩 칠하고 옮겨 직접 다듬을 수 있습니다.</p>
+  </header>
+
+  <main class="layout">
+    <section class="stage" aria-label="변환 결과">
+      <div id="canvasHost"></div>
+      <div class="stagebar">
+        <span>원본 <b id="stSrc">-</b></span>
+        <span>격자 <b id="stGrid">-</b></span>
+        <span>남은 큐브 <b id="stKept">-</b></span>
+        <span>지운 칸 <b id="stRemoved">-</b></span>
+        <span>편집한 칸 <b id="stEdited">0</b></span>
+        <span id="stHover">칸 위에 마우스를 올리면 좌표와 색이 보입니다</span>
+      </div>
+      <p class="hint" id="status">사진을 이 영역에 끌어다 놓거나 붙여넣어도 됩니다.</p>
+      <div class="controls" id="controls">
+      <div class="group cgroup">
+        <p class="gtitle">16 × 16 격자</p>
+        <div class="row"><label for="zoom">확대 <output id="o-zoom"></output></label><input type="range" id="zoom" min="1" max="3" step="0.05"><p class="sdesc">숫자가 클수록 사진 가운데를 크게 담습니다</p></div>
+        <div class="row"><label for="panX">좌우 위치 <output id="o-panX"></output></label><input type="range" id="panX" min="-50" max="50" step="1"><p class="sdesc">담을 영역을 왼쪽(−)·오른쪽(+)으로 옮깁니다</p></div>
+        <div class="row"><label for="panY">위아래 위치 <output id="o-panY"></output></label><input type="range" id="panY" min="-50" max="50" step="1"><p class="sdesc">담을 영역을 위(−)·아래(+)로 옮깁니다</p></div>
+        <div class="chips"><button class="btn primary" id="bloom">다시 피우기</button></div>
+      </div>
+
+      <div class="group cgroup">
+        <p class="gtitle">배경 지우기</p>
+        <div class="row"><label for="satMin">최소 채도 <output id="o-satMin"></output></label><input type="range" id="satMin" min="0" max="100" step="1"><p class="sdesc">이보다 색이 흐린 칸을 배경으로 보고 끕니다</p></div>
+        <div class="row"><label for="briMin">최소 밝기 <output id="o-briMin"></output></label><input type="range" id="briMin" min="0" max="100" step="1"><p class="sdesc">이보다 어두운 칸을 배경으로 보고 끕니다</p></div>
+        <div class="row"><span style="font-size:13.5px">지운 칸 표시</span>
+          <div class="seg" data-key="empty">
+            <button data-value="none">숨김</button>
+            <button data-value="slot">빈 자리</button>
+            <button data-value="ghost">원래 색</button>
+          </div>
+          <p class="sdesc">지운 칸을 화면에 어떻게 보여 줄지 고릅니다 (LED에는 영향 없음)</p>
+        </div>
+      </div>
+
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="조절 패널">
+      <div class="group">
+        <p class="gtitle">LED 박스 (실시간)</p>
+        <div class="ledline"><span class="ldot" id="ledDot"></span><span id="ledState">연결 안 됨</span></div>
+        <div class="chips">
+          <button class="btn primary" id="ledConnect">LED 연결</button>
+          <button class="chip" id="ledTest" aria-pressed="false">테스트 패턴</button>
+        </div>
+        <label class="check"><input type="checkbox" id="ledGamma" checked> 감마 보정 (화면 색에 가깝게)</label>
+        <p class="hint"><b>배선 고정</b> · 오른쪽 위 시작, 줄마다 방향이 바뀌는 지그재그</p>
+        <p class="hint" id="ledHint">ESP32를 UART 포트로 연결하고 누르세요. (크롬·엣지에서 연 cube_flower_live.html 전용)</p>
+      </div>
+
+      <div class="group">
+        <p class="gtitle">사진</p>
+        <div class="chips" id="samples">
+          <button class="chip" data-sample="dandelion" aria-pressed="true">민들레</button>
+          <button class="chip" data-sample="violet" aria-pressed="false">제비꽃</button>
+          <button class="chip" data-sample="creeper" aria-pressed="false">능소화</button>
+          <label class="btn upload primary" for="file">사진 올리기<input type="file" id="file" accept="image/*"></label>
+        </div>
+      </div>
+
+      <div class="group">
+        <p class="gtitle">도트 편집</p>
+        <div class="tools" id="tools">
+          <button data-tool="view" aria-pressed="true">보기</button>
+          <button data-tool="paint" aria-pressed="false">칠하기</button>
+          <button data-tool="erase" aria-pressed="false">지우기</button>
+          <button data-tool="move" aria-pressed="false">옮기기</button>
+          <button data-tool="pick" aria-pressed="false">스포이드</button>
+        </div>
+        <div class="paintrow">
+          <input type="color" id="paintColor" value="#F7C82B" aria-label="칠할 색">
+          <div class="swatches" id="swatches"></div>
+        </div>
+        <p class="hint" id="toolHint">칸 위에 올리면 좌표와 색이 보입니다.</p>
+        <div class="chips">
+          <button class="chip" id="undo">되돌리기</button>
+          <button class="chip" id="resetEdits">편집 초기화</button>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <section class="transfer" aria-labelledby="tTitle">
+    <div class="thead">
+      <p class="eyebrow">꽃을 만든 다음</p>
+      <h2 id="tTitle">만든 꽃을 LED 박스(ESP32)로 옮기기</h2>
+      <a class="glink" href="https://claude.ai/artifact/RyqxHfMEUFNCsSxRTsiCT4" target="_blank" rel="noopener">이 안내만 따로 보기 →</a>
+      <p>위에서 만든 16×16 꽃을 실제 LED 박스에 켜는 순서입니다. 박스 안의 ESP32가 화면에서 보낸 색을 받아 256개 LED에 그대로 켭니다.</p>
+    </div>
+    <ol class="steps">
+      <li class="step">
+        <div class="snum">1</div>
+        <div class="sbody">
+          <h3>LED 박스에 수신 코드 올리기</h3>
+          <p class="when">세션 전에 박스마다 한 번 · 이미 올라가 있으면 건너뜁니다</p>
+          <ol>
+            <li>Arduino IDE의 보드 매니저에서 <b>esp32 (Espressif)</b>를, 라이브러리 매니저에서 <b>FastLED</b>를 설치합니다.</li>
+            <li>아래 <b>코드 복사</b>를 누르고 새 스케치에 붙여넣습니다.</li>
+            <li>박스를 콘센트에 꽂고, 노트북과 ESP32의 <b>UART</b> 포트를 USB로 연결합니다. 보드는 <b>ESP32S3 Dev Module</b>, 포트는 그 UART 포트를 고르고 업로드합니다.</li>
+            <li>업로드가 끝나면 LED가 0번부터 한 번 훑고 지나갑니다. 배선이 살아 있다는 뜻입니다.</li>
+          </ol>
+          <div class="codebox">
+            <div class="codebar"><span>esp32_led_receiver.ino</span><button class="btn" id="copyIno">코드 복사</button></div>
+            <pre><code id="inoOut">// 큐브 꽃 LED 수신기 · ESP32(-S3) + WS2812B 16×16 (256개)
+// 웹 변환기(cube_flower_live.html) 또는 Processing 스케치가 USB 시리얼로 보내는 꽃을 받아 LED에 표시합니다.
+//
+// ▶ 마지막 꽃을 기억합니다
+//   편집이 멈추고 2초가 지나면 그때의 꽃을 ESP32 안에 저장합니다.
+//   USB를 빼고 다시 전원을 켜도 마지막 꽃이 바로 켜지고, 노트북을 다시 연결하면 그대로 실시간 편집이 됩니다.
+//   그래서 별도의 Arduino 코드를 업로드할 필요가 없습니다.
+//
+// 필요한 라이브러리: FastLED (Arduino IDE 라이브러리 매니저에서 설치)
+// 프레임 형식: &#x27;L&#x27; &#x27;E&#x27; &#x27;D&#x27; + 밝기 1바이트 + RGB 768바이트(스트립 순서)  → 표시 + 저장
+//            &#x27;L&#x27; &#x27;E&#x27; &#x27;T&#x27; + 밝기 1바이트 + RGB 768바이트              → 표시만 (테스트 패턴, 저장 안 함)
+// 한 프레임을 받을 때마다 &#x27;K&#x27;를 돌려보내서 화면에 &quot;LED 수신 중&quot;이 표시됩니다.
+
+#include &lt;FastLED.h&gt;
+#include &lt;Preferences.h&gt;
+
+#define DATA_PIN       13       // LED 데이터 핀 (레벨 시프터를 거쳐 DIN으로)
+#define NUM_LEDS       256
+#define COLOR_ORDER    GRB      // 빨강이 초록으로 보이면 RGB 등으로 바꿔 보세요
+#define BAUD           921600   // 웹 변환기 · Processing과 같은 값
+#define MAX_MILLIAMPS  4000     // 5V 전원 정격보다 낮게 (밝기는 항상 최대라 이 값이 실제 밝기를 제한합니다)
+#define SAVE_DELAY_MS  2000     // 마지막 변경 후 이 시간 동안 바뀌지 않으면 저장
+
+const size_t FRAME_BYTES = NUM_LEDS * 3;
+
+CRGB leds[NUM_LEDS];
+uint8_t frameBuf[FRAME_BYTES];   // 받는 중인 프레임
+uint8_t shownBuf[FRAME_BYTES];   // 지금 켜져 있는 꽃
+uint8_t savedBuf[FRAME_BYTES];   // 저장되어 있는 꽃
+uint8_t shownBright = 255, savedBright = 255;
+bool haveSaved = false;
+
+Preferences prefs;
+
+// 수신 상태
+uint8_t state = 0;          // 0~2: 머리글 찾는 중, 3: 밝기, 4: 색 데이터
+uint16_t idx = 0;
+uint8_t frameBright = 255;
+bool frameNoSave = false;   // &#x27;T&#x27; 프레임(테스트 패턴)은 저장하지 않음
+unsigned long lastByte = 0;
+
+// 저장 관리
+bool pendingSave = false;
+unsigned long lastChangeAt = 0;
+
+void showBuffer(const uint8_t *buf, uint8_t bright) {
+  for (int i = 0; i &lt; NUM_LEDS; i++) leds[i] = CRGB(buf[i * 3], buf[i * 3 + 1], buf[i * 3 + 2]);
+  FastLED.setBrightness(bright);
+  FastLED.show();
+}
+
+void setup() {
+  Serial.setRxBufferSize(2048);   // 한 프레임(772바이트)이 넉넉히 들어가도록
+  Serial.begin(BAUD);
+  FastLED.addLeds&lt;WS2812B, DATA_PIN, COLOR_ORDER&gt;(leds, NUM_LEDS);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_MILLIAMPS);
+
+  prefs.begin(&quot;flower&quot;, false);
+  size_t n = prefs.getBytes(&quot;rgb&quot;, savedBuf, FRAME_BYTES);
+  savedBright = prefs.getUChar(&quot;bright&quot;, 255);
+  if (n == FRAME_BYTES) {
+    haveSaved = true;
+    memcpy(shownBuf, savedBuf, FRAME_BYTES);
+    shownBright = savedBright;
+    showBuffer(shownBuf, shownBright);   // 저장된 마지막 꽃을 바로 켬
+  } else {
+    bootSweep();                          // 저장된 꽃이 없으면 배선 확인용 훑기
+  }
+}
+
+// 저장된 꽃이 없을 때만: 0번 LED부터 순서대로 한 번 훑습니다 (흰 점 = 0번(오른쪽 위), 파란 꼬리 = 배선 순서)
+void bootSweep() {
+  FastLED.setBrightness(40);
+  for (int i = 0; i &lt; NUM_LEDS; i++) {
+    leds[i] = (i == 0) ? CRGB::White : CRGB(0, 30, 70);
+    FastLED.show();
+    delay(5);
+  }
+  delay(400);
+  FastLED.clear(true);
+}
+
+void onFrame() {
+  bool changed = (frameBright != shownBright) || memcmp(frameBuf, shownBuf, FRAME_BYTES) != 0;
+  if (changed) {
+    memcpy(shownBuf, frameBuf, FRAME_BYTES);
+    shownBright = frameBright;
+    showBuffer(shownBuf, shownBright);
+    lastChangeAt = millis();
+  }
+  if (frameNoSave) {
+    pendingSave = false;   // 테스트 패턴은 저장하지 않음
+  } else {
+    // 저장된 꽃과 다르면 저장 대기 (실제 저장은 변경이 2초 멈춘 뒤 saveIfSettled에서)
+    bool sameAsSaved = haveSaved &amp;&amp; shownBright == savedBright &amp;&amp; memcmp(shownBuf, savedBuf, FRAME_BYTES) == 0;
+    pendingSave = !sameAsSaved;
+  }
+  Serial.write(&#x27;K&#x27;);
+}
+
+void saveIfSettled() {
+  if (!pendingSave || millis() - lastChangeAt &lt; SAVE_DELAY_MS) return;
+  memcpy(savedBuf, shownBuf, FRAME_BYTES);
+  savedBright = shownBright;
+  prefs.putBytes(&quot;rgb&quot;, savedBuf, FRAME_BYTES);
+  prefs.putUChar(&quot;bright&quot;, savedBright);
+  haveSaved = true;
+  pendingSave = false;
+}
+
+void loop() {
+  while (Serial.available() &gt; 0) {
+    uint8_t c = Serial.read();
+    lastByte = millis();
+    switch (state) {
+      case 0: state = (c == &#x27;L&#x27;) ? 1 : 0; break;
+      case 1: state = (c == &#x27;E&#x27;) ? 2 : (c == &#x27;L&#x27; ? 1 : 0); break;
+      case 2:
+        if (c == &#x27;D&#x27; || c == &#x27;T&#x27;) { frameNoSave = (c == &#x27;T&#x27;); state = 3; }
+        else state = (c == &#x27;L&#x27;) ? 1 : 0;
+        break;
+      case 3: frameBright = c; idx = 0; state = 4; break;
+      case 4:
+        frameBuf[idx++] = c;
+        if (idx &gt;= FRAME_BYTES) { onFrame(); state = 0; }
+        break;
+    }
+  }
+  // 프레임 중간에 데이터가 끊기면 버리고 다음 머리글을 기다립니다
+  if (state != 0 &amp;&amp; millis() - lastByte &gt; 200) state = 0;
+  saveIfSettled();
+}
+</code></pre>
+          </div>
+        </div>
+      </li>
+      <li class="step">
+        <div class="snum">2</div>
+        <div class="sbody">
+          <h3>박스와 노트북 연결하기</h3>
+          <ol>
+            <li>LED 박스의 전원 플러그를 콘센트에 꽂습니다. 박스 안의 SMPS가 LED와 ESP32에 함께 전원을 넣어 줍니다. 저장된 꽃이 있으면 바로 켜집니다.</li>
+            <li>USB-C 데이터 케이블로 노트북과 ESP32의 <b>UART</b> 포트를 연결합니다. 이 케이블은 전원이 아니라 꽃을 보내는 통로입니다.</li>
+            <li>노트북의 <b>크롬이나 엣지</b>에서 <code>cube_flower_live.html</code>을 엽니다. (QR이나 링크로 연 페이지에서는 USB 연결이 되지 않습니다)</li>
+            <li>오른쪽 위 <b>LED 연결</b>을 누르고, 이름에 <code>usbserial</code>이나 <code>SLAB</code>이 들어간 포트를 고릅니다.</li>
+            <li>초록 점과 함께 <b>LED 수신 중</b>이 뜨면 연결된 것입니다.</li>
+          </ol>
+        </div>
+      </li>
+      <li class="step">
+        <div class="snum">3</div>
+        <div class="sbody">
+          <h3>테스트 패턴으로 확인하기</h3>
+          <ol>
+            <li><b>테스트 패턴</b>을 누릅니다.</li>
+            <li>박스에 <b>흰 점이 왼쪽 위, 빨간 줄이 위쪽, 파란 줄이 왼쪽, 초록 점이 오른쪽 아래</b>로 보이면 정상입니다.</li>
+            <li>확인했으면 테스트 패턴을 다시 눌러 끕니다. 테스트 패턴은 박스에 저장되지 않습니다.</li>
+          </ol>
+        </div>
+      </li>
+      <li class="step">
+        <div class="snum">4</div>
+        <div class="sbody">
+          <h3>꽃 보내기</h3>
+          <ol>
+            <li>위에서 만든 꽃이 바로 박스에 켜집니다.</li>
+            <li>슬라이더를 움직이거나 도트를 칠하고 옮기면 박스도 그 자리에서 바뀝니다.</li>
+          </ol>
+        </div>
+      </li>
+      <li class="step">
+        <div class="snum">5</div>
+        <div class="sbody">
+          <h3>화면과 LED의 색 맞추기</h3>
+          <p>화면은 빛을 섞어 부드럽게 보여 주지만, LED는 빨강·초록·파랑 세 개의 작은 빛을 그대로 켭니다. 그래서 같은 색 값이라도 LED에서는 다르게 보이는 칸이 생깁니다.</p>
+          <ul class="diffs">
+            <li><b>어둡고 탁한 색</b>(갈색, 올리브, 짙은 초록)은 LED에서 거의 꺼진 것처럼 보이거나 칙칙하게 보입니다.</li>
+            <li><b>회색이나 흐린 색</b>은 색이 사라지고 희뿌옇게 보입니다.</li>
+            <li><b>흰색</b>은 화면보다 푸르스름하게 보입니다.</li>
+            <li><b>노랑·주황</b>은 화면보다 초록이나 빨강 쪽으로 기울어 보일 수 있습니다.</li>
+          </ul>
+          <ol>
+            <li>박스와 화면을 나란히 놓고, 화면과 다르게 보이는 칸을 찾습니다.</li>
+            <li>그 칸에 마우스를 올려 좌표와 색 값을 확인합니다. (보드 왼쪽·위의 숫자로 박스에서도 같은 칸을 찾을 수 있습니다)</li>
+            <li><b>칠하기</b>로 그 칸을 LED에서 잘 보이는 색으로 바꿉니다. 색상 상자에서 <b>더 밝고 선명한 쪽</b>으로 고르는 것이 기본입니다.</li>
+            <li>박스를 보면서 화면의 느낌과 비슷해질 때까지 조금씩 고칩니다. 비슷한 색의 칸이 많으면 <b>스포이드</b>로 고친 색을 가져와 다른 칸에도 칠합니다.</li>
+            <li>너무 어둡거나 칙칙해서 꽃처럼 보이지 않는 칸은 <b>지우기</b>로 끄는 것도 방법입니다.</li>
+          </ol>
+          <p class="tip"><b>알아 두기</b> · 오른쪽 위 <b>감마 보정</b>은 LED 색을 화면에 가깝게 맞춰 주는 기본 보정입니다. 켜 둔 상태에서 남는 차이를 위 순서로 직접 맞춥니다. 껐다 켜 보면 보정 전후의 차이를 비교할 수 있습니다.</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="snum">6</div>
+        <div class="sbody">
+          <h3>박스에 꽃 남기기</h3>
+          <ol>
+            <li>꽃을 완성하고 <b>2초 정도</b> 그대로 두면 박스 안에 자동으로 저장됩니다.</li>
+            <li><b>연결 끊기</b>를 누르고 노트북에서 USB를 뺍니다.</li>
+            <li>나중에 박스를 콘센트에만 꽂으면 노트북 없이도 마지막 꽃이 바로 켜집니다.</li>
+            <li>다시 노트북에 연결해 <b>LED 연결</b>을 누르면 이어서 편집할 수 있습니다.</li>
+          </ol>
+        </div>
+      </li>
+    </ol>
+    <div class="trouble">
+      <h3>막혔을 때</h3>
+      <dl>
+        <dt>"응답 기다리는 중"이 계속 떠요</dt><dd>USB를 뺐다 다시 꽂고 LED 연결을 다시 누르세요. 그래도 안 되면 1단계의 수신 코드가 올라가 있는지 확인합니다.</dd>
+        <dt>포트 목록에 아무것도 없어요</dt><dd>충전 전용이 아닌 데이터 케이블인지, ESP32의 UART 포트에 꽂았는지 확인하세요.</dd>
+        <dt>포트를 열 수 없다고 나와요</dt><dd>Arduino IDE의 시리얼 모니터나 Processing이 같은 포트를 쓰고 있으면 닫고 다시 시도하세요.</dd>
+        <dt>LED가 아예 켜지지 않아요</dt><dd>박스의 전원 플러그가 콘센트에 꽂혀 있는지 확인하세요. 꽂혀 있는데도 꺼져 있으면 조교에게 알려 주세요.</dd>
+      </dl>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script>if (typeof p5 === "undefined") document.write('<script src="p5.min.js"><\/script>');</script>
+<script>
+(function () {
+  if (typeof p5 === 'undefined') {
+    const msg = 'p5 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하거나, 이 파일과 같은 폴더에 p5.min.js가 있는지 확인한 뒤 크롬에서 다시 열어 주세요.';
+    document.addEventListener('DOMContentLoaded', () => { const el = document.getElementById('status'); if (el) { el.textContent = msg; el.style.color = '#B3261E'; } });
+    const el = document.getElementById('status'); if (el) { el.textContent = msg; el.style.color = '#B3261E'; }
+    return;
+  }
+  const $ = (id) => document.getElementById(id);
+  const N = 16;
+  const S = { gap: 3, zoom: 1.35, panX: 0, panY: -7, satMin: 30, briMin: 25, empty: 'slot', levels: 1 };
+  
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let P, src = null, srcName = '', cells = [], ox = 0, oy = 0;
+  let animating = false, t0 = 0;
+
+  const hsv = (r, g, b) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return { s: mx === 0 ? 0 : (mx - mn) / mx * 100, v: mx / 255 * 100 }; };
+  const quant = (v, L) => { if (L < 2) return v; const st = 255 / (L - 1); return Math.round(v / st) * st; };
+  const token = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  /* ---------- 예시 꽃 (코드로 그린 사진 대용) ---------- */
+  function makeSample(kind) {
+    const p = P, W = 560, H = 620;
+    const g = p.createGraphics(W, H); g.pixelDensity(1); g.randomSeed(kind.length * 17);
+    const pal = { dandelion: [[156, 162, 146], [98, 106, 92]], violet: [[138, 146, 144], [80, 88, 86]], creeper: [[166, 158, 148], [108, 104, 96]] }[kind];
+    const top = g.color(...pal[0]), bot = g.color(...pal[1]);
+    for (let y = 0; y < H; y++) { g.stroke(g.lerpColor(top, bot, y / H)); g.line(0, y, W, y); }
+    g.noStroke();
+    for (let i = 0; i < 28; i++) {
+      const c = pal[i % 2];
+      g.fill(c[0] + g.random(-16, 16), c[1] + g.random(-16, 16), c[2] + g.random(-16, 16), 130);
+      g.circle(g.random(W), g.random(H), g.random(40, 170));
+    }
+    g.filter(p.BLUR, 5);
+    const R = (a, b) => g.random(a, b);
+
+    if (kind === 'dandelion') {
+      const cx = 280, cy = 260;
+      g.noFill(); g.stroke(94, 130, 62); g.strokeWeight(11); g.bezier(292, H, 305, 500, 268, 390, cx, cy + 40);
+      g.noStroke(); g.fill(80, 122, 56);
+      [[-0.95, 250, 575], [-2.25, 330, 580]].forEach(([a, x, y]) => { g.push(); g.translate(x, y); g.rotate(a); g.ellipse(80, 0, 190, 40); g.pop(); });
+      for (let ring = 0; ring < 4; ring++) {
+        const rad = 150 - ring * 32, n = 64 - ring * 9;
+        for (let i = 0; i < n; i++) {
+          g.push(); g.translate(cx, cy); g.rotate(i / n * p.TWO_PI + ring * 0.13 + R(-0.03, 0.03));
+          g.fill(248, 192 + ring * 9 + R(-10, 10), 22 + R(0, 30));
+          g.ellipse(rad * 0.52, 0, rad, 11 - ring * 1.4); g.pop();
+        }
+      }
+      g.fill(214, 146, 20); g.circle(cx, cy, 44);
+    }
+
+    if (kind === 'violet') {
+      const cx = 280, cy = 270;
+      g.noFill(); g.stroke(88, 128, 70); g.strokeWeight(6); g.bezier(250, H, 230, 520, 300, 420, cx + 4, cy + 30);
+      g.noStroke(); g.fill(72, 116, 64);
+      g.push(); g.translate(170, 540); g.rotate(-0.5); g.ellipse(0, 0, 150, 110); g.pop();
+      g.push(); g.translate(400, 560); g.rotate(0.4); g.ellipse(0, 0, 140, 100); g.pop();
+      const petal = (a, len, wid, c) => {
+        g.push(); g.translate(cx, cy); g.rotate(a);
+        for (let k = 0; k < 6; k++) {
+          const t = k / 5;
+          g.fill(c[0] + t * 70, c[1] + t * 60, c[2] + t * 40);
+          g.ellipse(len * 0.5 * (1 - t * 0.3), 0, len * (1 - t * 0.5), wid * (1 - t * 0.5));
+        }
+        g.pop();
+      };
+      petal(-p.HALF_PI - 0.36, 175, 112, [100, 60, 176]);
+      petal(-p.HALF_PI + 0.36, 175, 112, [100, 60, 176]);
+      petal(-0.12, 150, 96, [116, 76, 194]);
+      petal(p.PI + 0.12, 150, 96, [116, 76, 194]);
+      petal(p.HALF_PI, 168, 124, [92, 52, 166]);
+      g.stroke(52, 26, 98); g.strokeWeight(2.2);
+      for (let i = -3; i <= 3; i++) g.line(cx, cy + 14, cx + i * 14, cy + 104 - Math.abs(i) * 8);
+      g.noStroke(); g.fill(238, 236, 246); g.circle(cx, cy, 40);
+      g.fill(244, 210, 70); g.circle(cx, cy + 2, 18);
+    }
+
+    if (kind === 'creeper') {
+      const cx = 270, cy = 300;
+      g.noFill(); g.stroke(104, 112, 66); g.strokeWeight(9); g.bezier(0, 120, 160, 160, 120, 300, cx - 60, cy + 20);
+      g.noStroke(); g.fill(76, 120, 60);
+      for (let i = 0; i < 6; i++) { g.push(); g.translate(40 + i * 34, 128 + i * 12); g.rotate(-0.6 + i * 0.25); g.ellipse(0, -26, 22, 54); g.pop(); }
+      for (let i = 0; i < 5; i++) {
+        const a = -p.HALF_PI + i * p.TWO_PI / 5;
+        for (let k = 0; k < 5; k++) {
+          const t = k / 4;
+          g.fill(228 + t * 18, 92 + t * 60, 34 + t * 30);
+          g.ellipse(cx + Math.cos(a) * 74 * (1 - t * 0.3), cy + Math.sin(a) * 74 * (1 - t * 0.3), 128 * (1 - t * 0.5), 120 * (1 - t * 0.5));
+        }
+      }
+      g.fill(248, 188, 70); g.circle(cx, cy, 74);
+      g.stroke(172, 44, 30); g.strokeWeight(2.5);
+      for (let i = 0; i < 12; i++) { const a = i / 12 * p.TWO_PI; g.line(cx + Math.cos(a) * 12, cy + Math.sin(a) * 12, cx + Math.cos(a) * 60, cy + Math.sin(a) * 60); }
+      g.noStroke(); g.fill(232, 104, 40);
+      [[430, 150, 0.7], [470, 200, 1.0], [400, 110, 0.4]].forEach(([x, y, a]) => { g.push(); g.translate(x, y); g.rotate(a); g.ellipse(0, 0, 34, 90); g.pop(); });
+    }
+    const out = g.get(); g.remove(); return out;
+  }
+
+  /* ---------- 분석과 렌더링 ---------- */
+  function fit() {
+    if (!src) return;
+    const host = $('canvasHost');
+    const ctrl = $('controls');
+    const reserve = (ctrl && window.innerWidth > 820 ? ctrl.offsetHeight : 0) + 96;
+    const maxH = Math.max(300, window.innerHeight - reserve);
+    const size = Math.round(Math.min(host.clientWidth, maxH));
+    P.resizeCanvas(size, size, true);
+  }
+
+  let cell = 20, lab = 18, plate = 8, hover = -1;
+  let edits = new Map(), undoStack = [], tool = 'view', paintHex = '#F7C82B';
+  let drawing = false, dragFrom = -1, dragPos = null;
+  const hex2rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const rgb2hex = (a) => '#' + a.map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase();
+  // 사진에서 계산한 칸 + 손으로 편집한 값을 합친 최종 상태
+  function view(idx) {
+    const c = cells[idx], e = edits.get(idx);
+    if (!e) return { keep: c.keep, rgb: finalRGB(c), s: c.s, v: c.v, edited: false };
+    if (!e.keep) return { keep: false, rgb: [0, 0, 0], s: 0, v: 0, edited: true };
+    const { s, v } = hsv(e.r, e.g, e.b);
+    return { keep: true, rgb: [e.r, e.g, e.b], s, v, edited: true };
+  }
+  function analyze() {
+    if (!src) return;
+    const size = P.width;
+    lab = Math.max(18, Math.round(size * 0.045));
+    plate = Math.max(6, Math.round(size * 0.016));
+    cell = Math.max(4, Math.floor((size - lab - plate * 2 - 10) / N));
+    const gridW = N * cell;
+    ox = Math.floor((size - lab - gridW) / 2) + lab + 2;
+    oy = ox;
+    hover = -1;
+
+    // 정사각형 크롭 영역
+    const side = Math.max(N, Math.floor(Math.min(src.width, src.height) / S.zoom));
+    let sx = src.width / 2 + S.panX / 100 * src.width - side / 2;
+    let sy = src.height / 2 + S.panY / 100 * src.height - side / 2;
+    sx = Math.round(clamp(sx, 0, src.width - side));
+    sy = Math.round(clamp(sy, 0, src.height - side));
+    const crop = src.get(sx, sy, side, side); crop.loadPixels();
+    const cw = crop.width, ch = crop.height, px = crop.pixels;
+
+    // 칸마다 그 안의 모든 픽셀 색을 평균
+    const acc = new Float64Array(N * N * 4);
+    for (let y = 0; y < ch; y++) {
+      const j = Math.min(N - 1, Math.floor(y * N / ch));
+      for (let x = 0; x < cw; x++) {
+        const i = Math.min(N - 1, Math.floor(x * N / cw));
+        const k = (y * cw + x) * 4, a = (j * N + i) * 4;
+        acc[a] += px[k]; acc[a + 1] += px[k + 1]; acc[a + 2] += px[k + 2]; acc[a + 3]++;
+      }
+    }
+    cells = [];
+    let kept = 0, sxk = 0, syk = 0;
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const a = (j * N + i) * 4, n = acc[a + 3] || 1;
+      const r = acc[a] / n, g = acc[a + 1] / n, b = acc[a + 2] / n;
+      const { s, v } = hsv(r, g, b);
+      const keep = s >= S.satMin && v >= S.briMin;
+      if (keep) { kept++; sxk += i; syk += j; }
+      cells.push({ i, j, r, g, b, s, v, keep, delay: 0 });
+    }
+    const cx = kept ? sxk / kept : N / 2, cy = kept ? syk / kept : N / 2;
+    let maxD = 1;
+    cells.forEach(c => { c.delay = Math.hypot(c.i - cx, c.j - cy); maxD = Math.max(maxD, c.delay); });
+    cells.forEach(c => { c.delay /= maxD; });
+    $('stSrc').textContent = srcName;
+    $('stGrid').textContent = N + ' × ' + N;
+    updateStats();
+    updateSwatches();
+  }
+
+  const finalRGB = (c) => [quant(c.r, S.levels), quant(c.g, S.levels), quant(c.b, S.levels)].map(Math.round);
+
+  // 캔버스 글꼴: 설치되었거나 불러온 Noto Sans CJK / KR 중 사용 가능한 것
+  let fontPick = null;
+  function hasFont(f) {
+    const c = document.createElement('canvas').getContext('2d'), t = '가나다 1234 abc';
+    c.font = '40px monospace'; const w0 = c.measureText(t).width;
+    c.font = `40px "${f}", monospace`; return c.measureText(t).width !== w0;
+  }
+  function canvasFont() {
+    if (!fontPick) fontPick = ['Noto Sans KR', 'Noto Sans CJK KR'].find(hasFont) || 'sans-serif';
+    return fontPick;
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fontPick = null; if (P && !animating) P.redraw(); });
+  function render() {
+    const p = P;
+    p.background(token('--canvas') || '#E2E6DE');
+    if (!src || !cells.length) return;
+    const gap = Math.min(S.gap, cell - 2);
+    const s = cell - gap;
+    const W = N * cell - gap;
+    const T = { plate: token('--plate'), slot: token('--slot'), major: token('--major'), muted: token('--muted'), ink: token('--ink'), accent: token('--accent') };
+
+    // 판: 16×16이 한 장의 보드처럼 보이도록
+    p.noStroke(); p.fill(T.plate);
+    p.rect(ox - plate, oy - plate, W + plate * 2, W + plate * 2, 6);
+
+    // 좌표 숫자 (4칸마다 진하게)
+    p.textFont(canvasFont());
+    p.textSize(Math.max(9, Math.min(13, cell * 0.36)));
+    p.textAlign(p.CENTER, p.CENTER);
+    for (let k = 0; k < N; k++) {
+      const strong = k === 0 || (k + 1) % 4 === 0;
+      p.fill(strong ? T.ink : T.muted);
+      p.text(k + 1, ox + k * cell + s / 2, oy - plate - lab / 2);
+      p.text(k + 1, ox - plate - lab / 2, oy + k * cell + s / 2);
+    }
+
+    // 4칸마다 구분선
+    p.stroke(T.major); p.strokeWeight(Math.max(1, Math.min(2.5, gap * 0.7)));
+    for (let k = 4; k < N; k += 4) {
+      const g = ox + k * cell - gap / 2, h = oy + k * cell - gap / 2;
+      p.line(g, oy - plate * 0.6, g, oy + W + plate * 0.6);
+      p.line(ox - plate * 0.6, h, ox + W + plate * 0.6, h);
+    }
+    p.noStroke();
+
+    // 칸(빈 자리)
+    for (let k = 0; k < cells.length; k++) {
+      const c = cells[k], keepNow = view(k).keep;
+      if (S.empty === 'none' && !keepNow && tool === 'view') continue;
+      const x = ox + c.i * cell, y = oy + c.j * cell;
+      p.fill(T.slot); p.rect(x, y, s, s, Math.min(3, s / 8));
+      if (S.empty === 'ghost' && !keepNow) { p.fill(c.r, c.g, c.b, 90); p.rect(x, y, s, s, Math.min(3, s / 8)); }
+    }
+
+    // 큐브: 윗면과 옆면까지 한 칸 안에 들어가게
+    let t = animating ? (p.millis() - t0) / 1700 : 1;
+    if (t >= 1) t = 1;
+    for (let k = 0; k < cells.length; k++) {
+      const c = cells[k], V = view(k);
+      if (!V.keep) continue;
+      if (k === dragFrom) continue;
+      const prog = clamp((t - c.delay * 0.6) / 0.4, 0, 1);
+      if (prog <= 0) continue;
+      const e = 1 - Math.pow(1 - prog, 3);
+      const x = ox + c.i * cell, y = oy + c.j * cell;
+      const sc = s * e;
+      const bx = x + (s - sc) / 2, by = y + (s - sc) / 2;
+      const [r, g, b] = V.rgb;
+      p.fill(r, g, b);
+      p.rect(bx, by, sc, sc, Math.min(3, sc / 8));
+    }
+
+    // 마우스를 올린 칸
+    if (hover >= 0) {
+      const c = cells[hover];
+      p.noFill(); p.stroke(T.accent); p.strokeWeight(2);
+      p.rect(ox + c.i * cell - 2, oy + c.j * cell - 2, s + 4, s + 4, 3);
+      p.noStroke();
+    }
+    // 옮기는 중인 도트
+    if (dragFrom >= 0 && dragPos) {
+      const c = cells[dragFrom], [r, g, b] = view(dragFrom).rgb;
+      p.noFill(); p.stroke(T.muted); p.strokeWeight(1.5);
+      p.rect(ox + c.i * cell, oy + c.j * cell, s, s, 3);
+      p.noStroke(); p.fill(r, g, b, 210);
+      p.rect(dragPos.x - s / 2, dragPos.y - s / 2, s, s, 3);
+    }
+    if (animating && t >= 1) { animating = false; p.noLoop(); }
+  }
+
+  function updateHover(p) {
+    const i = Math.floor((p.mouseX - ox) / cell), j = Math.floor((p.mouseY - oy) / cell);
+    const h = (i >= 0 && i < N && j >= 0 && j < N && p.mouseX >= 0 && p.mouseY >= 0 && p.mouseX <= p.width && p.mouseY <= p.height) ? j * N + i : -1;
+    if (h === hover) return;
+    hover = h;
+    if (h < 0) { $('stHover').textContent = '칸 위에 마우스를 올리면 좌표와 색이 보입니다'; }
+    else {
+      setHoverText(h);
+    }
+    if (!animating) p.redraw();
+  }
+
+  function setHoverText(h) {
+    if (h < 0) { $('stHover').textContent = '칸 위에 마우스를 올리면 좌표와 색이 보입니다'; return; }
+    const c = cells[h], V = view(h);
+    $('stHover').textContent = `(${c.i + 1}, ${c.j + 1}) LED ${ledIndex(c.i, c.j)}번 · ${V.keep ? rgb2hex(V.rgb) : '지움'}${V.edited ? ' · 편집함' : ''} · 채도 ${Math.round(V.s)}% · 밝기 ${Math.round(V.v)}%`;
+  }
+
+  function updateStats() {
+    if (!cells.length) return;
+    let kept = 0;
+    for (let k = 0; k < cells.length; k++) if (view(k).keep) kept++;
+    $('stKept').textContent = kept + ' / ' + N * N;
+    $('stRemoved').textContent = (N * N - kept) + '칸';
+    $('stEdited').textContent = edits.size + '칸';
+    LED.dirty = true;
+    updateCode();
+  }
+
+  // 사진에서 많이 쓰인 색 6개 + 기본 색
+  function updateSwatches() {
+    const buckets = new Map();
+    cells.forEach(c => {
+      if (!c.keep) return;
+      const [r, g, b] = finalRGB(c);
+      const key = (r >> 5) + ',' + (g >> 5) + ',' + (b >> 5);
+      const e = buckets.get(key) || { n: 0, r: 0, g: 0, b: 0 };
+      e.n++; e.r += r; e.g += g; e.b += b; buckets.set(key, e);
+    });
+    const fromPhoto = [...buckets.values()].sort((a, b) => b.n - a.n).slice(0, 6).map(e => rgb2hex([e.r / e.n, e.g / e.n, e.b / e.n]));
+    const basics = ['#FFFFFF', '#FF3B30', '#FF9F0A', '#FFD60A', '#34C759', '#0A84FF', '#AF52DE'];
+    const box = $('swatches');
+    box.innerHTML = '';
+    const addRow = (label, list) => {
+      list.forEach(hx => {
+        const b = document.createElement('button');
+        b.className = 'swatch'; b.style.background = hx; b.title = label + ' ' + hx; b.setAttribute('aria-label', label + ' ' + hx);
+        b.addEventListener('click', () => { setPaint(hx); setTool('paint'); });
+        box.appendChild(b);
+      });
+    };
+    if (fromPhoto.length) addRow('사진에서 뽑은 색', fromPhoto);
+    addRow('기본 색', basics);
+  }
+
+  function setPaint(hx) { paintHex = hx.toUpperCase(); $('paintColor').value = paintHex.toLowerCase(); }
+
+  const toolHints = {
+    view: '칸 위에 올리면 좌표와 색이 보입니다.',
+    paint: '칸을 누르거나 드래그해서 칠합니다. 색은 왼쪽 색상 상자나 견본에서 고르세요.',
+    erase: '칸을 누르거나 드래그해서 끕니다. LED에서는 꺼진 칸이 됩니다.',
+    move: '도트를 끌어서 다른 칸에 놓습니다. 놓은 자리의 원래 도트는 덮어씁니다.',
+    pick: '칸을 누르면 그 색을 가져와 칠하기로 바뀝니다.'
+  };
+  function setTool(t) {
+    tool = t;
+    document.querySelectorAll('#tools button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
+    $('toolHint').textContent = toolHints[t];
+    if (P && P.canvas) {
+      P.canvas.style.touchAction = t === 'view' ? 'auto' : 'none';
+      P.canvas.classList.toggle('editing', t !== 'view');
+    }
+    if (P && !animating) P.redraw();
+  }
+
+  function pushUndo() { undoStack.push(new Map(edits)); if (undoStack.length > 60) undoStack.shift(); }
+  function afterEdit() { updateStats(); if (hover >= 0) setHoverText(hover); if (!animating) P.redraw(); }
+
+  function cellAtEvent(e) {
+    const r = P.canvas.getBoundingClientRect();
+    const x = (e.clientX - r.left) * (P.width / r.width), y = (e.clientY - r.top) * (P.height / r.height);
+    const i = Math.floor((x - ox) / cell), j = Math.floor((y - oy) / cell);
+    return { x, y, idx: (i >= 0 && i < N && j >= 0 && j < N) ? j * N + i : -1 };
+  }
+  function applyAt(idx) {
+    if (idx < 0) return;
+    const cur = edits.get(idx);
+    if (tool === 'paint') {
+      const [r, g, b] = hex2rgb(paintHex);
+      if (cur && cur.keep && cur.r === r && cur.g === g && cur.b === b) return;
+      edits.set(idx, { keep: true, r, g, b });
+    } else if (tool === 'erase') {
+      if (!view(idx).keep) return;
+      edits.set(idx, { keep: false });
+    }
+    afterEdit();
+  }
+  function onPointerDown(e) {
+    if (tool === 'view' || !cells.length) return;
+    const { x, y, idx } = cellAtEvent(e);
+    if (idx < 0) return;
+    e.preventDefault();
+    try { P.canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    if (animating) { animating = false; P.noLoop(); }
+    if (tool === 'paint' || tool === 'erase') { pushUndo(); drawing = true; applyAt(idx); }
+    else if (tool === 'pick') {
+      const V = view(idx);
+      if (V.keep) { setPaint(rgb2hex(V.rgb)); setTool('paint'); $('status').textContent = '색을 가져왔습니다: ' + rgb2hex(V.rgb); }
+      else $('status').textContent = '꺼진 칸에는 가져올 색이 없습니다.';
+    } else if (tool === 'move') {
+      if (view(idx).keep) { dragFrom = idx; dragPos = { x, y }; P.redraw(); }
+    }
+  }
+  function onPointerMove(e) {
+    if (!cells.length) return;
+    const { x, y, idx } = cellAtEvent(e);
+    if (tool !== 'view' && idx !== hover) { hover = idx; setHoverText(idx); if (!drawing && dragFrom < 0 && !animating) P.redraw(); }
+    if (drawing) applyAt(idx);
+    if (dragFrom >= 0) { dragPos = { x, y }; P.redraw(); }
+  }
+  function onPointerUp(e) {
+    if (drawing) { drawing = false; }
+    if (dragFrom >= 0) {
+      const { idx } = cellAtEvent(e);
+      if (idx >= 0 && idx !== dragFrom) {
+        pushUndo();
+        const [r, g, b] = view(dragFrom).rgb;
+        edits.set(idx, { keep: true, r, g, b });
+        edits.set(dragFrom, { keep: false });
+      }
+      dragFrom = -1; dragPos = null;
+      afterEdit();
+    }
+  }
+
+  function bloom() {
+    if (reduceMotion) { P.redraw(); return; }
+    t0 = P.millis(); animating = true; P.loop();
+  }
+
+  function setSource(img, name) {
+    if (img.width > 1000) img.resize(1000, 0);
+    src = img; srcName = name;
+    edits = new Map(); undoStack = [];
+    fit(); analyze(); bloom(); updateCode();
+  }
+
+  function useSample(kind) {
+    document.querySelectorAll('#samples .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sample === kind)));
+    const names = { dandelion: '민들레 (예시)', violet: '제비꽃 (예시)', creeper: '능소화 (예시)' };
+    setSource(makeSample(kind), names[kind]);
+    $('status').textContent = '사진을 이 영역에 끌어다 놓거나 붙여넣어도 됩니다.';
+  }
+
+  function loadFile(file) {
+    if (!file || !file.type.startsWith('image/')) { $('status').textContent = '이미지 파일만 올릴 수 있습니다. JPG나 PNG 파일을 골라 주세요.'; return; }
+    const url = URL.createObjectURL(file);
+    P.loadImage(url, (img) => {
+      document.querySelectorAll('#samples .chip').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      setSource(img, file.name.length > 28 ? file.name.slice(0, 25) + '…' : file.name);
+      $('status').textContent = '불러왔습니다. 웹에서 가져온 사진이라면 출처를 함께 기록해 두세요.';
+      URL.revokeObjectURL(url);
+    }, () => { $('status').textContent = '이 파일은 열 수 없습니다. 다른 형식(JPG, PNG)으로 저장해서 다시 올려 주세요.'; });
+  }
+
+  /* ---------- 워크샵용 코드 ---------- */
+  function editsList() {
+    const rows = [];
+    for (const [idx, e] of [...edits.entries()].sort((a, b) => a[0] - b[0])) {
+      const x = idx % N + 1, y = Math.floor(idx / N) + 1;
+      rows.push(`  [${x}, ${y}, '${e.keep ? rgb2hex([e.r, e.g, e.b]) : 'off'}'],`);
+    }
+    return rows.length ? rows.join('\n') : '  // 아직 손으로 바꾼 칸이 없습니다. 예: [8, 8, \'#FF3B30\'],';
+  }
+  function codeString() {
+    return `// 큐브 꽃 변환기 · 16×16 도트 · 워크샵용 기본 스케치
+// 꽃 사진을 flower.jpg 라는 이름으로 업로드하세요.
+
+let img;
+const N = 16;              // 가로세로 칸 수 (16 × 16 = 256칸)
+let cell = 32;             // 칸 크기 (px)
+let gap = ${S.gap};              // 칸 사이 간격 (px)
+let zoom = ${S.zoom};          // 확대 배율 (1 = 사진 전체)
+let panX = ${S.panX}, panY = ${S.panY};    // 크롭 위치 (사진 크기 대비 %)
+let satMin = ${S.satMin};         // 이 채도(%)보다 낮은 칸은 배경으로 보고 지웁니다
+let briMin = ${S.briMin};         // 이 밝기(%)보다 어두운 칸도 지웁니다
+
+// 손으로 바꾼 칸: [가로, 세로, 색]  (좌표는 화면의 1~16 숫자, 'off'는 끈 칸)
+const edits = [
+${editsList()}
+];
+
+function preload() {
+  img = loadImage('flower.jpg');
+}
+
+function setup() {
+  createCanvas(N * cell, N * cell);
+  noLoop();
+}
+
+function draw() {
+  background(226, 230, 222);
+  noStroke();
+
+  // 1. 사진에서 정사각형 영역을 잘라내고
+  let side = floor(min(img.width, img.height) / zoom);
+  let sx = constrain(img.width / 2 + panX / 100 * img.width - side / 2, 0, img.width - side);
+  let sy = constrain(img.height / 2 + panY / 100 * img.height - side / 2, 0, img.height - side);
+  let small = img.get(floor(sx), floor(sy), side, side);
+
+  // 2. 칸마다 그 안에 들어가는 모든 픽셀의 색을 평균 냅니다 (변환기 화면과 같은 방식)
+  small.loadPixels();
+  let sum = new Array(N * N * 4).fill(0);
+  for (let py = 0; py < small.height; py++) {
+    for (let px = 0; px < small.width; px++) {
+      let ci = min(N - 1, floor(px * N / small.width));
+      let cj = min(N - 1, floor(py * N / small.height));
+      let p = (py * small.width + px) * 4, a = (cj * N + ci) * 4;
+      sum[a] += small.pixels[p]; sum[a + 1] += small.pixels[p + 1]; sum[a + 2] += small.pixels[p + 2]; sum[a + 3]++;
+    }
+  }
+
+  // 손으로 바꾼 칸을 찾기 쉽게 정리
+  let edited = {};
+  for (let e of edits) edited[(e[0] - 1) + ',' + (e[1] - 1)] = e[2];
+
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      let x = i * cell;
+      let y = j * cell;
+      let s = cell - gap;
+
+      // 3. 빈 자리를 먼저 그리고
+      fill(233, 236, 229);
+      rect(x, y, s, s, 3);
+
+      // 4. 손으로 바꾼 칸이면 그 색을 그대로 씁니다
+      let e = edited[i + ',' + j];
+      if (e === 'off') continue;
+      if (e) {
+        fill(e);
+        rect(x, y, s, s, 3);
+        continue;
+      }
+
+      // 5. 아니면 사진의 색으로 판단합니다
+      let k = (j * N + i) * 4;
+      let n = max(1, sum[k + 3]);
+      let r = sum[k] / n;
+      let g = sum[k + 1] / n;
+      let b = sum[k + 2] / n;
+      let mx = max(r, g, b);
+      let mn = min(r, g, b);
+      let sat = mx == 0 ? 0 : (mx - mn) / mx * 100;
+      let bri = mx / 255 * 100;
+
+      // 배경이라고 판단한 칸은 비워 둡니다
+      if (sat < satMin || bri < briMin) continue;
+
+      // 6. 남은 칸은 평균 색으로 칠합니다. LED 칸처럼 네모 도트
+      fill(round(r), round(g), round(b));
+      rect(x, y, s, s, 3);
+    }
+  }
+}
+`;
+  }
+  function updateCode() { const el = $('codeOut'); if (el) el.textContent = codeString(); }
+
+  // 화면 좌표 (x, y) → 스트립에서 몇 번째 LED인지 (Processing 스케치의 ledIndex와 같은 규칙)
+  // 화면 좌표 (x, y) → 스트립에서 몇 번째 LED인지
+  // 박스 배선(고정): 오른쪽 위 시작 · 1번째 줄 오른쪽→왼쪽 · 2번째 줄 왼쪽→오른쪽 · 이후 지그재그
+  function ledIndex(x, y) {
+    return y * N + (y % 2 === 0 ? N - 1 - x : x);
+  }
+
+  // 배선 순서까지 반영한, 수정 없이 업로드하는 Arduino(ESP32) 스케치
+  function ledString() {
+    const strip = new Array(N * N).fill('0x000000');
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const V = view(y * N + x);
+      strip[ledIndex(x, y)] = V.keep ? '0x' + rgb2hex(V.rgb).slice(1) : '0x000000';
+    }
+    const lines = [];
+    for (let L = 0; L < N; L++) {
+      const a = L * N, b = a + N - 1;
+      lines.push('  ' + strip.slice(a, a + N).join(', ') + (L < N - 1 ? ',' : ' ') + `  // LED ${a}–${b}`);
+    }
+    const wiring = '오른쪽 위에서 시작 · 1번째 줄 오른쪽→왼쪽 · 2번째 줄 왼쪽→오른쪽 · 이후 지그재그';
+    return `// 큐브 꽃 변환기 · ${srcName} · 16×16
+// 배선: ${wiring}
+// 이 배선 순서가 이미 반영되어 있어서, 수정 없이 ESP32에 업로드하면 이 꽃이 그대로 켜집니다.
+// 필요한 라이브러리: FastLED (Arduino IDE 라이브러리 매니저에서 설치)
+
+#include <FastLED.h>
+
+#define DATA_PIN       13      // LED 데이터 핀 (레벨 시프터를 거쳐 DIN으로)
+#define NUM_LEDS       256
+#define COLOR_ORDER    GRB     // 빨강이 초록으로 보이면 RGB로 바꿔 보세요
+#define BRIGHTNESS     255     // 항상 최대 밝기 (전류는 MAX_MILLIAMPS가 제한)
+#define MAX_MILLIAMPS  4000    // 5V 전원 정격보다 낮게
+#define USE_GAMMA      1       // 1이면 화면에서 본 색에 가깝게 보정 (Processing 스케치와 같은 방식)
+
+// LED 0번부터 255번까지, 스트립을 따라가는 순서 그대로입니다. 지운 칸은 0x000000(꺼짐).
+const uint32_t flower[NUM_LEDS] = {
+${lines.join('\n')}
+};
+
+CRGB leds[NUM_LEDS];
+
+void setup() {
+  FastLED.addLeds<WS2812B, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_MILLIAMPS);
+  FastLED.setBrightness(BRIGHTNESS);
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB(flower[i]);
+#if USE_GAMMA
+    leds[i] = applyGamma_video(leds[i], 2.2);
+#endif
+  }
+  FastLED.show();
+}
+
+void loop() {
+}
+`;
+  }
+
+
+  /* ---------- LED 박스 실시간 연결 (Web Serial) ---------- */
+  const LED = { port: null, writer: null, reader: null, dirty: true, sending: false, lastSend: 0, lastAck: -1e9, acks: 0, bright: 255, gamma: true, test: false };
+  const gammaLUT = Array.from({ length: 256 }, (_, i) => Math.round(Math.pow(i / 255, 2.2) * 255));
+  const ledMsg = (t) => { $('ledHint').textContent = t; };
+  function testRGB(x, y) {
+    if (x === 0 && y === 0) return [255, 255, 255];
+    if (x === N - 1 && y === N - 1) return [0, 255, 0];
+    if (y === 0) return [255, 0, 0];
+    if (x === 0) return [0, 0, 255];
+    return [0, 0, 0];
+  }
+  // 프레임: 'L' 'E' 'D' + 밝기 + RGB 768바이트 (스트립 순서) — esp32_led_receiver와 같은 형식
+  function buildFrame() {
+    const f = new Uint8Array(4 + N * N * 3);
+    f[0] = 76; f[1] = 69; f[2] = LED.test ? 84 : 68; f[3] = LED.bright;   // 'LED' = 표시+저장, 'LET' = 테스트(저장 안 함)
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      let rgb;
+      if (LED.test) rgb = testRGB(x, y);
+      else { const V = view(y * N + x); rgb = V.keep ? V.rgb : [0, 0, 0]; }
+      if (LED.gamma) rgb = rgb.map(v => gammaLUT[Math.max(0, Math.min(255, v | 0))]);
+      const o = 4 + ledIndex(x, y) * 3;
+      f[o] = rgb[0]; f[o + 1] = rgb[1]; f[o + 2] = rgb[2];
+    }
+    return f;
+  }
+  function updateLedState() {
+    const dot = $('ledDot'), st = $('ledState');
+    if (!LED.writer) { dot.className = 'ldot'; st.textContent = '연결 안 됨'; return; }
+    if (performance.now() - LED.lastAck < 2500) { dot.className = 'ldot on'; st.textContent = `LED 수신 중 · ${LED.acks}프레임`; }
+    else { dot.className = 'ldot wait'; st.textContent = '응답 기다리는 중 (ESP32 재시작 또는 수신 코드 확인)'; }
+  }
+  async function readLoop() {
+    try {
+      while (LED.reader) {
+        const { value, done } = await LED.reader.read();
+        if (done) break;
+        if (value) for (const b of value) if (b === 75) { LED.lastAck = performance.now(); LED.acks++; }
+      }
+    } catch (e) { }
+  }
+  async function ledConnect() {
+    if (!('serial' in navigator)) { ledMsg('이 브라우저는 USB 연결을 지원하지 않습니다. 컴퓨터의 크롬이나 엣지에서 cube_flower_live.html 파일을 열어 주세요.'); return; }
+    try {
+      const port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 921600, bufferSize: 4096 });
+      // ESP32 보드의 자동 리셋 회로(DTR·RTS)가 다운로드 모드로 들어가지 않도록 두 신호를 같은 값으로 맞춤
+      try { await port.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch (e) { }
+      LED.port = port; LED.writer = port.writable.getWriter(); LED.reader = port.readable.getReader();
+      LED.acks = 0; LED.lastAck = -1e9; LED.dirty = true;
+      readLoop();
+      $('ledConnect').textContent = '연결 끊기';
+      ledMsg('연결했습니다. 잠시 뒤 꽃이 뜨고, 이후로는 편집하는 대로 바로 바뀝니다.');
+    } catch (e) {
+      if (e.name === 'NotFoundError') ledMsg('포트를 고르지 않았습니다. 다시 눌러 usbserial 또는 SLAB이 들어간 포트를 고르세요.');
+      else if (e.name === 'SecurityError') ledMsg('이 페이지(Claude 아티팩트)에서는 브라우저가 USB 연결을 막습니다. 받은 cube_flower_live.html 파일을 크롬으로 열어 주세요.');
+      else ledMsg('포트를 열 수 없습니다. Arduino IDE 시리얼 모니터나 Processing이 같은 포트를 쓰고 있으면 닫고 다시 시도하세요.');
+    }
+    updateLedState();
+  }
+  async function ledDisconnect(msg) {
+    const { port, writer, reader } = LED;
+    LED.writer = null; LED.reader = null; LED.port = null;
+    try { if (reader) { await reader.cancel(); reader.releaseLock(); } } catch (e) { }
+    try { if (writer) writer.releaseLock(); } catch (e) { }
+    try { if (port) await port.close(); } catch (e) { }
+    $('ledConnect').textContent = 'LED 연결';
+    if (msg) ledMsg(msg);
+    updateLedState();
+  }
+  setInterval(async () => {
+    updateLedState();
+    if (!LED.writer || LED.sending || !cells.length) return;
+    const now = performance.now();
+    // 바뀌면 바로(초당 최대 30번), 아니어도 1초마다 다시 보냄 — ESP32 재시작 후에도 자동으로 다시 뜸
+    if ((LED.dirty && now - LED.lastSend > 33) || now - LED.lastSend > 1000) {
+      LED.sending = true; LED.dirty = false;
+      try { await LED.writer.write(buildFrame()); LED.lastSend = now; }
+      catch (e) { await ledDisconnect('보내기에 실패했습니다. 케이블을 확인하고 다시 연결하세요.'); }
+      LED.sending = false;
+    }
+  }, 30);
+
+
+
+  /* ---------- UI 연결 ---------- */
+  const ranges = {
+    zoom: v => (+v).toFixed(2) + '×', panX: v => (v > 0 ? '+' : '') + v + '%', panY: v => (v > 0 ? '+' : '') + v + '%',
+    satMin: v => v + '%', briMin: v => v + '%'
+  };
+  Object.keys(ranges).forEach(id => {
+    const el = $(id), out = $('o-' + id);
+    el.value = S[id]; out.textContent = ranges[id](S[id]);
+    el.addEventListener('input', () => {
+      S[id] = +el.value; out.textContent = ranges[id](el.value);
+      analyze(); if (!animating) P.redraw();
+      updateCode();
+    });
+  });
+  document.querySelectorAll('.seg[data-key]').forEach(seg => {
+    const key = seg.dataset.key;
+    const sync = () => seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === S[key])));
+    sync();
+    seg.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      S[key] = b.dataset.value; sync(); analyze(); if (!animating) P.redraw(); updateCode();
+    });
+  });
+  $('samples').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) useSample(b.dataset.sample); });
+  $('file').addEventListener('change', e => loadFile(e.target.files[0]));
+  $('bloom').addEventListener('click', bloom);
+
+  const host = $('canvasHost');
+  host.addEventListener('dragover', e => { e.preventDefault(); host.classList.add('drag'); });
+  host.addEventListener('dragleave', () => host.classList.remove('drag'));
+  host.addEventListener('drop', e => { e.preventDefault(); host.classList.remove('drag'); loadFile(e.dataTransfer.files[0]); });
+  document.addEventListener('paste', e => { const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/')); if (f) loadFile(f); });
+
+  function copier(btnId, codeId, getText, label) {
+    $(btnId).addEventListener('click', () => {
+      const btn = $(btnId);
+      const done = () => { btn.textContent = '복사했습니다'; setTimeout(() => btn.textContent = label, 1600); };
+      const fallback = () => { const r = document.createRange(); r.selectNodeContents($(codeId)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = '선택됨 · Ctrl/⌘+C'; };
+      try { navigator.clipboard.writeText(getText()).then(done, fallback); } catch (err) { fallback(); }
+    });
+  }
+  copier('copyIno', 'inoOut', () => $('inoOut').textContent, '코드 복사');
+
+  $('ledConnect').addEventListener('click', () => { if (LED.writer) ledDisconnect('연결을 끊었습니다.'); else ledConnect(); });
+  $('ledTest').addEventListener('click', e => {
+    LED.test = !LED.test; e.currentTarget.setAttribute('aria-pressed', String(LED.test)); LED.dirty = true;
+    ledMsg(LED.test ? '테스트 패턴: 흰 점이 왼쪽 위, 빨간 줄이 위쪽, 파란 줄이 왼쪽, 초록 점이 오른쪽 아래로 보이면 배선이 맞습니다.' : '꽃을 다시 보냅니다.');
+  });
+  $('ledGamma').addEventListener('change', e => { LED.gamma = e.target.checked; LED.dirty = true; });
+  if (navigator.serial) navigator.serial.addEventListener('disconnect', () => { if (LED.port) ledDisconnect('USB가 분리되었습니다. 다시 꽂고 LED 연결을 누르세요.'); });
+
+  $('tools').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTool(b.dataset.tool); });
+  $('paintColor').addEventListener('input', e => { paintHex = e.target.value.toUpperCase(); if (tool !== 'paint') setTool('paint'); });
+  $('undo').addEventListener('click', () => { if (!undoStack.length) { $('status').textContent = '되돌릴 편집이 없습니다.'; return; } edits = undoStack.pop(); afterEdit(); });
+  $('resetEdits').addEventListener('click', () => { if (!edits.size) return; pushUndo(); edits = new Map(); afterEdit(); $('status').textContent = '편집을 모두 지웠습니다. 되돌리기로 복구할 수 있습니다.'; });
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !/input|textarea/i.test(e.target.tagName)) { e.preventDefault(); $('undo').click(); }
+  });
+
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (!P) return; fit(); analyze(); if (!animating) P.redraw(); }, 150); });
+  const rerender = () => { if (P && !animating) P.redraw(); };
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rerender);
+  new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  new p5((p) => {
+    P = p;
+    p.setup = () => {
+      const c = p.createCanvas(10, 10); c.parent('canvasHost');
+      c.elt.addEventListener('pointerdown', onPointerDown);
+      c.elt.addEventListener('pointermove', onPointerMove);
+      c.elt.addEventListener('pointerup', onPointerUp);
+      c.elt.addEventListener('pointercancel', onPointerUp);
+      p.pixelDensity(Math.min(2, window.devicePixelRatio || 1));
+      p.noLoop();
+      useSample('dandelion');
+    };
+    p.draw = render;
+    p.mouseMoved = () => updateHover(p);
+    p.mousePressed = () => updateHover(p);
+  });
+})();
+</script>
+
+</html>
