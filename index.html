@@ -196,7 +196,7 @@ pre { margin: 0; background: var(--surface); border: 1px solid var(--line); bord
           <button class="btn primary" id="ledConnect">LED 연결</button>
           <button class="chip" id="ledTest" aria-pressed="false">테스트 패턴</button>
         </div>
-        <label class="check"><input type="checkbox" id="ledGamma" checked> 감마 보정 (화면 색에 가깝게)</label>
+        <label class="check"><input type="checkbox" id="ledGamma"> 감마 보정 (화면 색에 가깝게)</label>
         <p class="hint"><b>배선 고정</b> · 오른쪽 위 시작, 줄마다 방향이 바뀌는 지그재그</p>
         <p class="hint" id="ledHint">ESP32를 UART 포트로 연결하고 누르세요. (노트북 크롬·엣지에서 연 wotkd0208.github.io/flower256 전용)</p>
       </div>
@@ -294,7 +294,7 @@ pre { margin: 0; background: var(--surface); border: 1px solid var(--line); bord
             <li>박스를 보면서 화면의 느낌과 비슷해질 때까지 조금씩 고칩니다. 비슷한 색의 칸이 많으면 <b>스포이드</b>로 고친 색을 가져와 다른 칸에도 칠합니다.</li>
             <li>너무 어둡거나 칙칙해서 꽃처럼 보이지 않는 칸은 <b>지우기</b>로 끄는 것도 방법입니다.</li>
           </ol>
-          <p class="tip"><b>알아 두기</b> · 오른쪽 위 <b>감마 보정</b>은 LED 색을 화면에 가깝게 맞춰 주는 기본 보정입니다. 켜 둔 상태에서 남는 차이를 위 순서로 직접 맞춥니다. 껐다 켜 보면 보정 전후의 차이를 비교할 수 있습니다.</p>
+          <p class="tip"><b>알아 두기</b> · 오른쪽 위 <b>감마 보정</b>을 켜면 LED 색이 화면에 더 가깝게 맞춰집니다. 처음에는 꺼져 있으니 켜고 끄며 차이를 비교해 보고, 남는 차이는 위 순서로 직접 맞춥니다.</p>
         </div>
       </li>
       <li class="step">
@@ -922,7 +922,7 @@ void loop() {
 
 
   /* ---------- LED 박스 실시간 연결 (Web Serial) ---------- */
-  const LED = { port: null, writer: null, reader: null, dirty: true, sending: false, lastSend: 0, lastAck: -1e9, acks: 0, bright: 255, gamma: true, test: false };
+  const LED = { port: null, writer: null, reader: null, dirty: true, sending: false, lastSend: 0, lastAck: -1e9, acks: 0, bright: 255, gamma: false, test: false };
   const gammaLUT = Array.from({ length: 256 }, (_, i) => Math.round(Math.pow(i / 255, 2.2) * 255));
   const ledMsg = (t) => { $('ledHint').textContent = t; };
   function testRGB(x, y) {
